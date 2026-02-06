@@ -1,6 +1,6 @@
 # 🛒 Pay4All - Inclusive FinCommerce Engine
 
-[![Hackathon](https://img.shields.io/badge/Hackathon-Vectors%20In%20Orbit-blue)](https://qdrant.tech/)
+[![Hackathon](https://img.shields.io/badge/Hackathon-Maratech-blue)](https://qdrant.tech/)
 [![Django](https://img.shields.io/badge/Backend-Django-092e20)](https://www.djangoproject.com/)
 [![React](https://img.shields.io/badge/Frontend-React-61dafb)](https://react.dev/)
 [![Qdrant](https://img.shields.io/badge/Vector%20DB-Qdrant-red)](https://qdrant.tech/)
