@@ -35,12 +35,13 @@ class LogoutAPIView(views.APIView):
         logout(request)
         return Response(status=status.HTTP_200_OK)
 
-class CheckSessionView(generics.RetrieveAPIView):
-    permission_classes = (permissions.IsAuthenticated,)
-    serializer_class = UserSerializer
+class CheckSessionView(views.APIView):
+    permission_classes = (permissions.AllowAny,)
 
-    def get_object(self):
-        return self.request.user
+    def get(self, request):
+        if request.user.is_authenticated:
+            return Response(UserSerializer(request.user).data)
+        return Response({'isAuthenticated': False, 'details': 'User is Anonymous'}, status=status.HTTP_401_UNAUTHORIZED)
 
 @method_decorator(ensure_csrf_cookie, name='dispatch')
 class GetCSRFToken(views.APIView):
