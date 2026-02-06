@@ -1,0 +1,163 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Your Shopping Cart - Pay4All{% endblock %}
+
+{% block content %}
+<main class="cart-main">
+    <div class="cart-container">
+        <h1>Your Shopping Cart</h1>
+
+        {% if cart and cart.items.all %}
+        <div class="cart-content">
+            <div class="cart-items">
+                {% for item in cart.items.all %}
+                <div class="cart-item">
+                    <div class="item-image">
+                        {% if item.product.get_first_image %}
+                        <img src="{{ item.product.get_first_image }}" alt="{{ item.product.title }}">
+                        {% else %}
+                        <div class="placeholder-image"></div>
+                        {% endif %}
+                    </div>
+                    <div class="item-details">
+                        <h3><a href="{% url 'product_detail' item.product.id %}">{{ item.product.title }}</a></h3>
+                        <p class="item-price">${{ item.product.price }}</p>
+                    </div>
+                    <div class="item-actions">
+                        <form action="{% url 'update_cart_quantity' item.id %}" method="POST" class="quantity-form">
+                            {% csrf_token %}
+                            <button type="submit" name="action" value="decrease" class="qty-btn">-</button>
+                            <span class="qty-display">{{ item.quantity }}</span>
+                            <button type="submit" name="action" value="increase" class="qty-btn">+</button>
+                        </form>
+                        <span class="item-total">${{ item.total_price|floatformat:2 }}</span>
+                        <a href="{% url 'remove_from_cart' item.id %}" class="remove-btn">Remove</a>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+
+            <div class="cart-summary">
+                <h2>Summary</h2>
+                <div class="summary-row">
+                    <span>Subtotal</span>
+                    <span>${{ cart.total_price|floatformat:2 }}</span>
+                </div>
+                <div class="summary-row total">
+                    <span>Total</span>
+                    <span>${{ cart.total_price|floatformat:2 }}</span>
+                </div>
+                <button class="checkout-btn">Proceed to Checkout</button>
+                <a href="{% url 'results' %}" class="continue-shopping">Continue Shopping</a>
+            </div>
+        </div>
+        {% else %}
+        <div class="empty-cart">
+            <p>Your cart is empty.</p>
+            <a href="{% url 'results' %}" class="start-shopping-btn">Start Shopping</a>
+        </div>
+        {% endif %}
+    </div>
+</main>
+
+<style>
+    .cart-container {
+        max-width: 1200px;
+        margin: 2rem auto;
+        padding: 0 1rem;
+    }
+
+    .cart-content {
+        display: grid;
+        grid-template-columns: 2fr 1fr;
+        gap: 2rem;
+    }
+
+    .cart-item {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        padding: 1rem;
+        border-bottom: 1px solid #eee;
+    }
+
+    .item-image img {
+        width: 80px;
+        height: 80px;
+        object-fit: cover;
+        border-radius: 8px;
+    }
+
+    .item-details {
+        flex: 1;
+    }
+
+    .item-actions {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+    }
+
+    .quantity-form {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .qty-btn {
+        background: #f0f0f0;
+        border: none;
+        padding: 0.25rem 0.5rem;
+        cursor: pointer;
+        border-radius: 4px;
+    }
+
+    .cart-summary {
+        background: #f9f9f9;
+        padding: 1.5rem;
+        border-radius: 8px;
+        height: fit-content;
+    }
+
+    .summary-row {
+        display: flex;
+        justify-content: space-between;
+        margin-bottom: 1rem;
+    }
+
+    .summary-row.total {
+        font-weight: bold;
+        font-size: 1.2rem;
+        border-top: 2px solid #ddd;
+        padding-top: 1rem;
+    }
+
+    .checkout-btn {
+        width: 100%;
+        padding: 1rem;
+        background: #2196f3;
+        color: white;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+        font-size: 1rem;
+        margin-bottom: 1rem;
+    }
+
+    .empty-cart {
+        text-align: center;
+        padding: 3rem;
+    }
+
+    .start-shopping-btn {
+        display: inline-block;
+        padding: 0.75rem 1.5rem;
+        background: #2196f3;
+        color: white;
+        text-decoration: none;
+        border-radius: 4px;
+        margin-top: 1rem;
+    }
+</style>
+{% endblock %}

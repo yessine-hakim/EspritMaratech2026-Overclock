@@ -1,0 +1,319 @@
+<!-- AI Assistant Chat Widget -->
+<button class="chat-toggle-btn" id="chatToggle">
+    <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+    </svg>
+</button>
+
+<div class="chat-widget" id="chatWidget">
+    <div class="chat-header">
+        <h3>
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <circle cx="12" cy="12" r="10"></circle>
+                <path d="M8 14s1.5 2 4 2 4-2 4-2"></path>
+                <line x1="9" y1="9" x2="9.01" y2="9"></line>
+                <line x1="15" y1="9" x2="15.01" y2="9"></line>
+            </svg>
+            Pay4All Assistant
+        </h3>
+        <button class="chat-close" id="chatClose">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <line x1="18" y1="6" x2="6" y2="18"></line>
+                <line x1="6" y1="6" x2="18" y2="18"></line>
+            </svg>
+        </button>
+    </div>
+    <div class="chat-body" id="chatBody">
+        <div class="chat-message ai">
+            <div class="message-text">
+                Hi! I'm your AI shopping assistant. Tell me what you need and your budget (e.g., "Smartwatch under
+                $100").
+            </div>
+        </div>
+    </div>
+    <form class="chat-input-area" id="chatForm" enctype="multipart/form-data">
+        <input type="text" class="chat-input" id="chatInput" placeholder="Type your message...">
+        <!-- Mic Button -->
+        <button type="button" class="chat-action-btn" id="chatMicBtn" title="Voice input">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"></path>
+                <path d="M19 10v2a7 7 0 0 1-14 0v-2"></path>
+                <line x1="12" y1="19" x2="12" y2="23"></line>
+                <line x1="8" y1="23" x2="16" y2="23"></line>
+            </svg>
+        </button>
+        <!-- Camera Button -->
+        <label for="chatImageUpload" class="chat-action-btn" title="Upload image">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path>
+                <circle cx="12" cy="13" r="4"></circle>
+            </svg>
+        </label>
+        <input type="file" id="chatImageUpload" accept="image/*" style="display: none;">
+        <!-- Send Button -->
+        <button type="submit" class="chat-send-btn">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <line x1="22" y1="2" x2="11" y2="13"></line>
+                <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
+            </svg>
+        </button>
+    </form>
+</div>
+
+<script>
+    const widget = document.getElementById('chatWidget');
+    const toggleBtn = document.getElementById('chatToggle');
+    const closeBtn = document.getElementById('chatClose');
+    const chatForm = document.getElementById('chatForm');
+    const chatInput = document.getElementById('chatInput');
+    const chatBody = document.getElementById('chatBody');
+    const chatImageUpload = document.getElementById('chatImageUpload');
+
+    // UI Indicator for Image
+    const imageLabel = document.querySelector('label[for="chatImageUpload"]');
+    const indicator = document.createElement('span');
+    indicator.innerHTML = '✓';
+    indicator.style = "display: none; position: absolute; top: -5px; right: -5px; background: #2ec4b6; color: white; border-radius: 50%; width: 14px; height: 14px; font-size: 10px; line-height: 14px; text-align: center; border: 1.5px solid white;";
+    imageLabel.style.position = 'relative';
+    imageLabel.appendChild(indicator);
+
+    toggleBtn.addEventListener('click', () => {
+        widget.classList.toggle('active');
+        if (widget.classList.contains('active')) chatInput.focus();
+    });
+
+    closeBtn.addEventListener('click', () => widget.classList.remove('active'));
+
+    chatImageUpload.addEventListener('change', () => {
+        if (chatImageUpload.files && chatImageUpload.files.length > 0) {
+            indicator.style.display = 'block';
+            imageLabel.style.color = '#2ec4b6';
+        } else {
+            indicator.style.display = 'none';
+            imageLabel.style.color = '';
+        }
+    });
+
+    chatForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const query = chatInput.value.trim();
+        const hasImage = chatImageUpload.files && chatImageUpload.files.length > 0;
+
+        if (!query && !hasImage) return;
+
+        // Visual feedback
+        let userMsg = query;
+        if (hasImage) userMsg = query ? `[Image] ${query}` : `[Image Search]`;
+        addMessage(userMsg, 'user');
+
+        const loadingId = addLoading();
+
+        const formData = new FormData();
+        formData.append('query', query);
+        formData.append('user_id', "{{ user.id|default:'' }}");
+        if (hasImage) {
+            formData.append('image', chatImageUpload.files[0]);
+        }
+
+        // Reset inputs
+        chatInput.value = '';
+        chatImageUpload.value = '';
+        indicator.style.display = 'none';
+        imageLabel.style.color = '';
+
+        try {
+            const res = await fetch('/api/recommendations/ask/', {
+                method: 'POST',
+                headers: { 'X-CSRFToken': getCookie('csrftoken') },
+                body: formData
+            });
+            const data = await res.json();
+            removeLoading(loadingId);
+            data.error ? addMessage("Error: " + data.error, 'ai') : renderAI(data);
+        } catch (err) {
+            removeLoading(loadingId);
+            addMessage("Network error. Please try again.", 'ai');
+        }
+    });
+
+    function addMessage(text, sender) {
+        const div = document.createElement('div');
+        div.className = `chat-message ${sender}`;
+        div.innerHTML = `<div class="message-text">${escapeHtml(text)}</div>`;
+        chatBody.appendChild(div);
+        scrollToBottom();
+    }
+
+    function addLoading() {
+        const id = 'load-' + Date.now();
+        const div = document.createElement('div');
+        div.id = id;
+        div.className = 'chat-message ai';
+        div.innerHTML = '<div class="typing-indicator"><div class="dot"></div><div class="dot"></div><div class="dot"></div></div>';
+        chatBody.appendChild(div);
+        scrollToBottom();
+        return id;
+    }
+
+    function removeLoading(id) {
+        document.getElementById(id)?.remove();
+    }
+
+    function renderAI(data) {
+        const container = document.createElement('div');
+        container.className = 'chat-message ai';
+        let html = '';
+
+        // Budget badge with icon
+        if (data.inferred_budget) {
+            html += `
+                <div class="budget-badge">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="12" cy="12" r="10"></circle>
+                        <path d="M12 6v6l4 2"></path>
+                    </svg>
+                    <span>Budget: $${data.inferred_budget.min_budget} - $${data.inferred_budget.max_budget}</span>
+                </div>`;
+        }
+
+        // Main explanation
+        html += `<div class="message-text">${formatMarkdown(data.explanation)}</div>`;
+
+        // Product recommendations
+        if (data.recommendations?.length) {
+            html += '<div class="product-recommendations">';
+            data.recommendations.slice(0, 4).forEach(p => {
+                html += `
+                    <div class="recommendation-card">
+                        <div class="rec-inner">
+                            <div class="rec-img">
+                                ${p.image ? `<img src="${p.image}" alt="${escapeHtml(p.title)}">` :
+                        `<svg viewBox="0 0 24 24" fill="none" stroke="#ccc" stroke-width="2">
+                                    <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                                    <circle cx="8.5" cy="8.5" r="1.5"></circle>
+                                    <polyline points="21 15 16 10 5 21"></polyline>
+                                </svg>`}
+                            </div>
+                            <div class="rec-content">
+                                <div class="rec-title">${escapeHtml(p.title)}</div>
+                                <div class="rec-meta">
+                                    <span class="rec-price">${p.price}</span>
+                                    <a href="/products/${p.id}/" target="_blank" class="rec-link">View →</a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>`;
+            });
+            html += '</div>';
+        }
+
+        container.innerHTML = html;
+        chatBody.appendChild(container);
+        scrollToBottom();
+    }
+
+    function formatMarkdown(text) {
+        return text
+            .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+            .replace(/\*(.*?)\*/g, '<em>$1</em>')
+            .replace(/\n/g, '<br>');
+    }
+
+    function escapeHtml(text) {
+        const div = document.createElement('div');
+        div.textContent = text;
+        return div.innerHTML;
+    }
+
+    function scrollToBottom() {
+        chatBody.scrollTop = chatBody.scrollHeight;
+    }
+
+    // ========== MULTIMODAL: VOICE INPUT ==========
+    const chatMicBtn = document.getElementById('chatMicBtn');
+    let chatMediaRecorder;
+    let chatAudioChunks = [];
+
+    chatMicBtn.addEventListener('click', async () => {
+        if (chatMicBtn.classList.contains('recording')) {
+            stopChatRecording();
+        } else {
+            startChatRecording();
+        }
+    });
+
+    async function startChatRecording() {
+        if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+            addMessage('Your browser does not support audio recording.', 'ai');
+            return;
+        }
+        try {
+            const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+            chatMediaRecorder = new MediaRecorder(stream);
+            chatAudioChunks = [];
+            chatMediaRecorder.addEventListener('dataavailable', e => chatAudioChunks.push(e.data));
+            chatMediaRecorder.addEventListener('stop', () => {
+                const audioBlob = new Blob(chatAudioChunks, { type: 'audio/webm' });
+                transcribeAndAppend(audioBlob);
+                stream.getTracks().forEach(t => t.stop());
+            });
+            chatMediaRecorder.start();
+            chatMicBtn.classList.add('recording');
+            chatInput.placeholder = 'Listening...';
+        } catch (err) {
+            addMessage('Could not access microphone.', 'ai');
+        }
+    }
+
+    function stopChatRecording() {
+        if (chatMediaRecorder && chatMediaRecorder.state !== 'inactive') {
+            chatMediaRecorder.stop();
+            chatMicBtn.classList.remove('recording');
+            chatInput.placeholder = 'Type your message...';
+        }
+    }
+
+    async function transcribeAndAppend(blob) {
+        const formData = new FormData();
+        formData.append('audio', blob, 'recording.webm');
+        const loadingId = addLoading();
+        try {
+            const res = await fetch('/api/transcribe/', {
+                method: 'POST',
+                headers: { 'X-CSRFToken': getCookie('csrftoken') },
+                body: formData
+            });
+            const data = await res.json();
+            removeLoading(loadingId);
+            if (data.text) {
+                if (chatInput.value) {
+                    chatInput.value += ' ' + data.text;
+                } else {
+                    chatInput.value = data.text;
+                }
+                // We do NOT auto-submit here per recent universal behavior change
+            } else {
+                addMessage('Could not understand audio. Please try again.', 'ai');
+            }
+        } catch (err) {
+            removeLoading(loadingId);
+            addMessage('Transcription failed.', 'ai');
+        }
+    }
+
+    function getCookie(name) {
+        let cookieValue = null;
+        if (document.cookie && document.cookie !== '') {
+            const cookies = document.cookie.split(';');
+            for (let i = 0; i < cookies.length; i++) {
+                const cookie = cookies[i].trim();
+                if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                    break;
+                }
+            }
+        }
+        return cookieValue;
+    }
+
+</script>
