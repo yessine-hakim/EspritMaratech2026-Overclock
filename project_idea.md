@@ -42,6 +42,25 @@ A **Voice-First Intelligent Agent** that:
 *   **Voice Price Verification**: "How much is the total?", "Can I afford this?".
 *   **Natural Feedback**: Spoken confirmation of all actions.
 
+### 🏦 3. Banking Agent (Financial Control)
+*   **Balance Check**: "Right now, you have 120 dinars available."
+*   **Transaction Execution**: "Transfer 50 dinars for the electric bill."
+*   **Affordability Guard**: The Safety Agent intercepts requests: *"You have 120 dinars. This grocery list costs 140 dinars. I cannot proceed. Would you like to remove the most expensive item?"*
+
+### 🤖 4. Specialized Accessibility Agents
+To ensure **Trust, Clarity, and Confidence** (crucial for blind users), the platform employs a multi-agent system:
+
+*   **Intent Agent**: Deciphers *exactly* what the user wants, handling complex contextual requests.
+*   **Safety Agent**: Acts as a guardian, validating actions against safety rules (e.g., verifying transfer limits, confirming user intent before financial commitment).
+*   **Explanation Agent**: Translates technical results into simple, verbal language.
+
+#### Voice Intent Pipeline
+| Component | Function | Example Output |
+| :--- | :--- | :--- |
+| **Explainability** | Verbal explanations | *"I transferred 50 dinars to Ahmed because your balance was sufficient. Your new balance is 70 dinars."* |
+| **Audit Logs** | Voice interaction history | *"You asked for a balance check at 10:00 AM."* |
+| **Regulation Agent** | Safety rules & limits | *"Your balance is 120 dinars. You can pay for your shopping list. I will proceed only after your confirmation."* |
+
 ---
 
 ## 🛒 Product Categories (MVP Scope)
@@ -69,7 +88,19 @@ The platform focuses on essential daily needs:
 
 ---
 
-## ♿ Accessibility Principles
--   **WCAG 2.1 Compliance**: High contrast, ARIA labels.
--   **Screen Reader First**: DOM order matches visual order.
--   **No-Touch Interaction**: Full functionality via voice.
+## ♿ Accessibility Compliance Strategy
+Refining the platform to meet strict requirements:
+
+### 👁️ Screen Reader & Blind Accessibility
+*   **Semantic HTML**: Native `<nav>`, `<main>`, `<button>` elements for predictable navigation.
+*   **ARIA Live Regions**: Dynamic updates (e.g., "Item added") are announced immediately.
+*   **Alt Text**: AI-generated descriptions for all product images.
+
+### 🎙️ Voice & Cognitive
+*   **Input Agnostic**: Full functionality via Voice OR Keyboard OR Screen Reader.
+*   **Confidence Confirmation**: Critical actions require explicit verbal "Yes/No".
+*   **Simplified Mode**: Removing jargon for seniors; "Transfer" -> "Send Money".
+
+### 🔎 Low Vision & Motor
+*   **High Contrast**: WCAG AAA compliant themes.
+*   **Large Targets**: All interactive elements are minimum 48x48px.

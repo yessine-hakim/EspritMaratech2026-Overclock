@@ -2,12 +2,14 @@ import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useCart } from '../context/CartContext';
-import { FaShoppingCart, FaUser, FaSignOutAlt, FaSearch, FaCamera } from 'react-icons/fa';
+import { useA11y } from '../context/A11yContext';
+import { FaShoppingCart, FaUser, FaSignOutAlt, FaSearch, FaCamera, FaEye, FaTextHeight, FaUniversalAccess } from 'react-icons/fa';
 import api from '../api';
 
 const Navbar = () => {
     const { user, logout } = useAuth();
     const { cart } = useCart();
+    const { highContrast, setHighContrast, fontSize, setFontSize, simplifiedMode, setSimplifiedMode } = useA11y();
     const navigate = useNavigate();
     const [searchTerm, setSearchTerm] = useState('');
     const [selectedImage, setSelectedImage] = useState(null);
@@ -77,8 +79,33 @@ const Navbar = () => {
                     </button>
                 </form>
 
-                {/* Account Actions */}
+                {/* Account & Accessibility Actions */}
                 <div className="flex items-center gap-4">
+                    {/* A11y Controls */}
+                    <div className="flex items-center gap-2 border-r border-gray-100 pr-4 mr-2">
+                        <button
+                            onClick={() => setHighContrast(!highContrast)}
+                            className={`p-2 rounded-lg transition-colors ${highContrast ? 'bg-black text-yellow-400' : 'text-gray-medium hover:bg-gray-50'}`}
+                            title="Toggle High Contrast"
+                        >
+                            <FaEye size={20} />
+                        </button>
+                        <button
+                            onClick={() => setFontSize(prev => prev >= 150 ? 100 : prev + 25)}
+                            className="p-2 text-gray-medium hover:bg-gray-50 rounded-lg transition-colors"
+                            title="Increase Font Size"
+                        >
+                            <FaTextHeight size={20} />
+                        </button>
+                        <button
+                            onClick={() => setSimplifiedMode(!simplifiedMode)}
+                            className={`p-2 rounded-lg transition-colors ${simplifiedMode ? 'bg-accent text-white' : 'text-gray-medium hover:bg-gray-50'}`}
+                            title="Toggle Simplified Mode"
+                        >
+                            <FaUniversalAccess size={20} />
+                        </button>
+                    </div>
+
                     {user ? (
                         <>
                             <Link to="/cart" className="relative text-gray-medium hover:text-accent transition-colors p-2">

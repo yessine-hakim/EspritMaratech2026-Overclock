@@ -1,5 +1,6 @@
 import os
 import json
+from typing import Any
 from langchain_groq import ChatGroq
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.output_parsers import JsonOutputParser
@@ -25,6 +26,36 @@ class BudgetOutput(BaseModel):
     max_budget: float = Field(description="Absolute maximum budget constraint")
     intended_category: str = Field(description="The specific product category detected (one of: earphone, laptop, monitor, phone, smartwatch, tablet) or 'other'")
     reasoning: str = Field(description="Brief explanation of the budget inference and category selection")
+
+
+# --- Intent Classification Chain ---
+
+class IntentOutput(BaseModel):
+    intent: str = Field(description="The user's intent: SHOPPING, BANKING, or NAVIGATION")
+    entities: dict[str, Any] = Field(description="Extracted entities (e.g., amount, recipient, category)")
+    reasoning: str = Field(description="Brief reasoning for intent classification")
+
+def get_intent_classification_chain():
+    llm = get_llm()
+    parser = JsonOutputParser(pydantic_object=IntentOutput)
+
+    prompt = ChatPromptTemplate.from_messages([
+        ("system", """You are an intent classifier for Pay4All, an inclusive financial shopping assistant.
+        
+        Classify the user's query into one of the following intents:
+        - **SHOPPING**: Searching for products, manage shopping lists, checking prices.
+        - **BANKING**: Checking balance, transaction history, or performing transfers.
+        - **NAVIGATION**: General questions about how to use the app or moving between pages.
+        
+        Extraction Rules:
+        - For BANKING: Extract 'amount', 'recipient', 'category' if mentioned.
+        - For SHOPPING: Extract 'product_type', 'max_price' if mentioned.
+        
+        Output JSON only."""),
+        ("human", "User Query: {query}"),
+    ])
+
+    return prompt | llm | parser
 
 
 def get_budget_profiling_chain():
@@ -90,29 +121,41 @@ def get_synthesis_chain():
     llm = get_llm()
     
     prompt = ChatPromptTemplate.from_messages([
-        ("system", """You are Pay4All, a budget-aware shopping assistant.
-        You have successfully retrieved a list of products that match the user's query and budget.
+        ("system", """You are Pay4All, an AI-powered inclusive assistant for blind and motor-impaired users.
         
-        Your task is to present these recommendations.
+        Your internal agents (Intent, Safety, Explanation) have processed the request.
         
-        Rules:
-        1. Explain WHY these products were chosen, specifically mentioning how they fit the budget and needs.
-        2. If alternatives were found (because the original request was over budget), explicitly state this and explain the trade-offs.
-        3. Be helpful and encouraging.
-        4. Reference the specific products by name and price.
+        **Tone**: Clear, professional, and accessible. Use **verbal confirmation** as priority.
         
-        Keep the response concise but informative.
+        **CONTEXTS**:
+        
+        1. **SHOPPING**:
+           - Present products fitting the budget.
+           - If a Safety check was done: Mention if it fits the current balance.
+           - Example: "I found 3 laptops. They fit your $500 budget and your total balance is enough."
+        
+        2. **BANKING**:
+           - **Balance check**: State the amount clearly.
+           - **Transfer**: Explain WHY it happened or if it was blocked.
+           - Example: "I transferred 50 TD to Ahmed because your balance was sufficient. Your new balance is 70 TD."
+           - Safety fail: "I cannot transfer 500 TD as it exceeds your weekly limit. Please confirm with a manual signature if you wish to proceed."
+        
+        3. **NAVIGATION**:
+           - Explain how to use the app.
+        
+        **Always prioritize simple explanations of results.**
         """),
         ("human", """User Query: {query}
-        Inferred Budget: {inferred_budget}
+        Detected Intent: {intent}
         
-        Retrieved Products:
-        {products}
+        Contextual Data:
+        - Budget: {inferred_budget}
+        - Products: {products}
+        - Bank Data: {bank_data}
+        - Cart Total: {cart_total}
+        - Safety Check: {safety_check_passed}
         
-        Alternatives (if any):
-        {alternatives}
-        
-        Generate the final response."""),
+        Generate the final spoken-style response."""),
     ])
     
     return prompt | llm

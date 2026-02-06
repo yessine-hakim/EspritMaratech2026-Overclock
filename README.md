@@ -6,7 +6,7 @@
 [![Qdrant](https://img.shields.io/badge/Vector%20DB-Qdrant-red)](https://qdrant.tech/)
 [![Accessibility](https://img.shields.io/badge/A11y-WCAG%202.1-yellow)](https://www.w3.org/WAI/standards-guidelines/wcag/)
 
-**Pay4All** (meaning "AI Buy" in Arabic) is a multimodal retrieval-augmented discovery engine designed to bridge the gap between product discovery, financial reality, and digital accessibility. 
+**Pay4All** is a 
 
 It serves two critical missions:
 1.  **Financial Inclusion**: Integrating budget constraints and payment preferences directly into the recommendation logic.

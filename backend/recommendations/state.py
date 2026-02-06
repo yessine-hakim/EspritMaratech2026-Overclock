@@ -1,22 +1,27 @@
-from typing import TypedDict, List, Dict, Any, Optional
+from typing import TypedDict, Optional, Any
 
 class RecommendationState(TypedDict):
     """State for the recommendation graph."""
+    # Intent & Routing
     query: str
-    user_profile: Dict[str, Any]
+    user_profile: dict[str, Any]
+    intent: str  # SHOPPING, BANKING, NAVIGATION
     
     # Inferred data
-    inferred_budget: Dict[str, float]  # {min, target, max}
+    inferred_budget: dict[str, float]  # {min, target, max}
+    bank_data: Optional[dict[str, Any]] # Balance, Transactions
+    cart_total: float
     
     # Processing state
-    retrieved_products: List[Any]  # List of Qdrant ScoredPoint or Product model objects
-    filtered_products: List[Any]
-    anomalies: List[Any]
-    alternatives: List[Any]
+    retrieved_products: list[Any]
+    filtered_products: list[Any]
+    anomalies: list[Any]
+    alternatives: list[Any]
     
     # Final output
-    final_recommendations: List[Dict[str, Any]]
+    final_recommendations: list[dict[str, Any]]
     explanation: str
     budget_respected: bool
-    visual_ids: List[int]
+    visual_ids: list[int]
+    safety_check_passed: bool
 

@@ -7,8 +7,11 @@ from qdrant_client.http import models as rest
 from langchain_community.embeddings.fastembed import FastEmbedEmbeddings
 
 from .state import RecommendationState
-from .chains import get_budget_profiling_chain, get_synthesis_chain
+from .chains import get_budget_profiling_chain, get_synthesis_chain, get_intent_classification_chain
+from banking.models import BankAccount
 from pay4all.qdrant_config import get_qdrant_client, PRODUCTS_COLLECTION
+from decimal import Decimal
+from langchain_qdrant import QdrantVectorStore
 
 # --- Utilities ---
 
@@ -25,7 +28,50 @@ def get_retriever():
 
 # --- Nodes ---
 
-def budget_profiling_node(state: RecommendationState) -> Dict[str, Any]:
+def intent_classification_node(state: RecommendationState) -> dict[str, Any]:
+    """Determine user intent: SHOPPING, BANKING, or NAVIGATION."""
+    chain = get_intent_classification_chain()
+    result = chain.invoke({"query": state["query"]})
+    return {
+        "intent": result["intent"],
+        "bank_data": result.get("entities", {}) # Initial extraction
+    }
+
+def banking_node(state: RecommendationState) -> dict[str, Any]:
+    """Handle banking inquiries (Balance, Transactions)."""
+    user = state["user_profile"].get("user_obj") # Passed from view
+    if not user:
+        return {"explanation": "User authentication required for banking actions."}
+    
+    account = BankAccount.objects.filter(user=user).first()
+    if not account:
+        return {"explanation": "No bank account found for this user."}
+    
+    bank_info = {
+        "balance": float(account.balance),
+        "currency": account.currency,
+        "iban": account.iban
+    }
+    
+    return {"bank_data": bank_info}
+
+def safety_agent_node(state: RecommendationState) -> dict[str, Any]:
+    """Safety Guard: Check if cart total + recommendations fit bank balance."""
+    bank_balance = state.get("bank_data", {}).get("balance", 0)
+    cart_total = state.get("cart_total", 0)
+    
+    # Calculate potential cost of top 1 recommendation
+    top_rec_price = 0
+    if state.get("final_recommendations"):
+        top_rec_price = state["final_recommendations"][0].get('price_val', 0)
+    
+    predicted_total = cart_total + top_rec_price
+    
+    safety_passed = predicted_total <= bank_balance
+    
+    return {"safety_check_passed": safety_passed}
+
+def budget_profiling_node(state: RecommendationState) -> dict[str, Any]:
     """Infer budget from query and profile."""
     chain = get_budget_profiling_chain()
     result = chain.invoke({
@@ -36,7 +82,7 @@ def budget_profiling_node(state: RecommendationState) -> Dict[str, Any]:
 
 from products.models import Product
 
-def retrieval_node(state: RecommendationState) -> Dict[str, Any]:
+def retrieval_node(state: RecommendationState) -> dict[str, Any]:
     """Retrieve candidate products from Qdrant and/or DB."""
     query = state["query"]
     visual_ids = state.get("visual_ids", [])
@@ -86,7 +132,7 @@ def retrieval_node(state: RecommendationState) -> Dict[str, Any]:
     return {"retrieved_products": retrieved}
 
 
-def early_budget_filter_node(state: RecommendationState) -> Dict[str, Any]:
+def early_budget_filter_node(state: RecommendationState) -> dict[str, Any]:
     """Filter products based on inferred budget."""
     budget = state["inferred_budget"]
     max_budget = budget.get("max_budget", 1000000)
@@ -105,7 +151,7 @@ def early_budget_filter_node(state: RecommendationState) -> Dict[str, Any]:
     
     return {"filtered_products": filtered, "alternatives": dropped} # Keep dropped as potential alternatives context
 
-def anomaly_detection_node(state: RecommendationState) -> Dict[str, Any]:
+def anomaly_detection_node(state: RecommendationState) -> dict[str, Any]:
     """Detect anomalies (e.g. price too low/high compared to cluster)."""
     products = state["filtered_products"]
     
@@ -131,7 +177,7 @@ def anomaly_detection_node(state: RecommendationState) -> Dict[str, Any]:
             
     return {"filtered_products": products}
 
-def ranking_node(state: RecommendationState) -> Dict[str, Any]:
+def ranking_node(state: RecommendationState) -> dict[str, Any]:
     """Rank products (MMR or simple score)."""
     # Simply sort by similarity for now, or use MMR if we had vector access handy
     # Since 'retrieved_products' in state are dicts (metadata), we trust the retrieval order or re-sort
@@ -139,7 +185,7 @@ def ranking_node(state: RecommendationState) -> Dict[str, Any]:
     ranked = sorted(state["filtered_products"], key=lambda x: x.get('similarity_score', 0), reverse=True)
     return {"final_recommendations": ranked[:5]} # Top 5
 
-def alternatives_node(state: RecommendationState) -> Dict[str, Any]:
+def alternatives_node(state: RecommendationState) -> dict[str, Any]:
     """Find alternatives if no results."""
     # If no filtered products, pick form 'dropped' (which were over budget)
     # or just use the retrieved ones but flag them.
@@ -150,17 +196,18 @@ def alternatives_node(state: RecommendationState) -> Dict[str, Any]:
         return {"final_recommendations": alternatives, "budget_respected": False}
     return {"budget_respected": True}
 
-def synthesis_node(state: RecommendationState) -> Dict[str, Any]:
+def synthesis_node(state: RecommendationState) -> dict[str, Any]:
     """Generate final explanation."""
     chain = get_synthesis_chain()
     
-    final_recs = state["final_recommendations"]
-    
     result = chain.invoke({
         "query": state["query"],
-        "inferred_budget": state["inferred_budget"],
-        "products": final_recs,
-        "alternatives": state.get("alternatives", [])[:2] if not state.get("budget_respected") else []
+        "intent": state.get("intent", "SHOPPING"),
+        "inferred_budget": state.get("inferred_budget", {}),
+        "products": state.get("final_recommendations", []),
+        "bank_data": state.get("bank_data", {}),
+        "cart_total": state.get("cart_total", 0),
+        "safety_check_passed": state.get("safety_check_passed", True)
     })
     
     return {"explanation": result.content}

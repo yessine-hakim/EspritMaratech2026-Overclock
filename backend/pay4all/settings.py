@@ -41,6 +41,7 @@ INSTALLED_APPS = [
     'users',
     'recommendations',
     'cart',
+    'banking.apps.BankingConfig',
     'rest_framework',
     'corsheaders',
 ]

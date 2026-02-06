@@ -26,17 +26,27 @@ def recommend(request):
         if not query and not image_file:
             return JsonResponse({"error": "Query or image is required"}, status=400)
             
-        # Fetch user profile
+        # Fetch user profile and cart total
         user_profile = {}
+        user_obj = None
+        cart_total = 0.0
+        
         if user_id:
             try:
-                user = User.objects.get(id=user_id)
+                user_obj = User.objects.get(id=user_id)
                 user_profile = {
-                    "monthly_budget": float(user.monthly_budget),
-                    "spending_habits": user.payment_preferences
+                    "monthly_budget": float(user_obj.monthly_budget),
+                    "spending_habits": user_obj.payment_preferences,
+                    "user_obj": user_obj # Pass for banking node access
                 }
-            except User.DoesNotExist:
-                pass
+                
+                # Fetch live cart total
+                from cart.models import Cart
+                cart = Cart.objects.filter(user=user_obj, is_active=True).first()
+                if cart:
+                    cart_total = float(cart.total_price)
+            except Exception as e:
+                print(f"Error fetching user/cart info for recommendations: {e}")
         
         # 2. Handle Visual Context if image is provided
         visual_ids = []
@@ -71,6 +81,7 @@ def recommend(request):
         initial_state = {
             "query": query or "",
             "user_profile": user_profile,
+            "cart_total": cart_total,
             "inferred_budget": {},
             "retrieved_products": [],
             "filtered_products": [],
