@@ -1,74 +1,120 @@
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { FaCamera, FaSearch } from 'react-icons/fa';
+import { useNavigate, Link } from 'react-router-dom';
+import { FaCamera, FaSearch, FaCheckCircle, FaWallet, FaChartLine, FaInfoCircle } from 'react-icons/fa';
 import api from '../api';
 
 const HomePage = () => {
     const navigate = useNavigate();
-    const [selectedImage, setSelectedImage] = useState(null);
-    const [loading, setLoading] = useState(false);
+    const [searchTerm, setSearchTerm] = useState('');
 
-    const handleImageChange = (e) => {
-        if (e.target.files && e.target.files[0]) {
-            setSelectedImage(e.target.files[0]);
-        }
+    const handleSearch = (e) => {
+        e.preventDefault();
+        navigate(`/results?q=${searchTerm}`);
     };
 
-    const handleVisualSearch = async () => {
-        if (!selectedImage) return;
-
-        const formData = new FormData();
-        formData.append('image', selectedImage);
-        setLoading(true);
-
-        try {
-            const response = await api.post('/api/products/api/visual-search/', formData, {
-                headers: {
-                    'Content-Type': 'multipart/form-data',
-                },
-            });
-            // Redirect to results with visual_ids or pass data state
-            // Ideally backend returns list, we can pass to state or use query param if backend supported visual_ids
-            // Backend currently redirects or returns JSON depending on how we called it?
-            // Wait, standard form post redirects. API post returns JSON.
-            // My API view returns JSON list of products.
-            // So I should navigate to /results with state.
-            navigate('/results', { state: { products: response.data, visualSearch: true } });
-        } catch (error) {
-            console.error("Visual search failed", error);
-        } finally {
-            setLoading(false);
-        }
-    };
+    // Placeholder data for categories to match template
+    const categories = [
+        { id: 1, name: 'Electronics', icon: 'rect' },
+        { id: 2, name: 'Home & Garden', icon: 'home' },
+        { id: 3, name: 'Beauty & Health', icon: 'heart' },
+        { id: 4, name: 'Toys & Games', icon: 'smile' },
+    ];
 
     return (
-        <div className="container mx-auto mt-10 p-4 text-center">
-            <h1 className="text-4xl font-bold mb-6">Welcome to Pay4All</h1>
-            <p className="text-xl mb-8">Inclusive voice-driven shopping experience.</p>
+        <main className="container mx-auto px-4 py-12 md:py-16">
+            {/* Hero Section */}
+            <section className="bg-gradient-to-br from-primary to-accent rounded-3xl p-8 md:p-16 text-center text-white shadow-xl mb-16 relative overflow-hidden">
+                <div className="relative z-10 max-w-4xl mx-auto">
+                    <h2 className="text-4xl md:text-5xl font-bold mb-6 leading-tight">Discover Products You Can Actually Afford</h2>
+                    <p className="text-lg md:text-xl text-white/90 mb-10 max-w-2xl mx-auto">
+                        Pay4All combines smart search, budget-aware recommendations, and price insights to help you make confident purchasing decisions.
+                    </p>
 
-            <div className="max-w-xl mx-auto bg-white p-8 rounded-lg shadow-lg">
-                <h2 className="text-2xl font-semibold mb-4 flex items-center justify-center">
-                    <FaCamera className="mr-2" /> Visual Search
-                </h2>
-                <div className="mb-4 text-left">
-                    <label className="block mb-2 text-sm font-medium text-gray-900">Upload an image to find similar products</label>
-                    <input
-                        type="file"
-                        accept="image/*"
-                        onChange={handleImageChange}
-                        className="block w-full text-sm text-gray-900 border border-gray-300 rounded-lg cursor-pointer bg-gray-50 focus:outline-none"
+                    <form onSubmit={handleSearch} className="flex gap-4 max-w-2xl mx-auto">
+                        <input
+                            type="text"
+                            placeholder="Search products..."
+                            className="flex-1 py-4 px-6 rounded-xl border border-white/20 bg-white/10 text-white placeholder-white/60 backdrop-blur-sm focus:outline-none focus:bg-white/20 transition-all font-medium"
+                            value={searchTerm}
+                            onChange={(e) => setSearchTerm(e.target.value)}
+                        />
+                        <button type="submit" className="px-8 py-4 bg-highlight text-primary rounded-xl font-bold hover:transform hover:-translate-y-1 hover:shadow-lg transition-all duration-300">
+                            Search
+                        </button>
+                    </form>
+                </div>
+
+                {/* Decorative circles */}
+                <div className="absolute top-0 left-0 w-64 h-64 bg-white/5 rounded-full -translate-x-1/2 -translate-y-1/2 blur-3xl"></div>
+                <div className="absolute bottom-0 right-0 w-96 h-96 bg-highlight/10 rounded-full translate-x-1/3 translate-y-1/3 blur-3xl"></div>
+            </section>
+
+            {/* Features Section */}
+            <section className="mb-20">
+                <h3 className="text-3xl font-bold text-center text-primary mb-12">Why Pay4All?</h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+                    <FeatureCard
+                        icon={<FaCheckCircle size={28} />}
+                        title="Semantic Search"
+                        desc="Find exactly what you need with intelligent product understanding"
+                    />
+                    <FeatureCard
+                        icon={<FaWallet size={28} />}
+                        title="Budget-Aware"
+                        desc="Set your budget once, get recommendations that fit your wallet"
+                    />
+                    <FeatureCard
+                        icon={<FaChartLine size={28} />}
+                        title="Price Intelligence"
+                        desc="Spot price drops, detect anomalies, and track trends"
+                    />
+                    <FeatureCard
+                        icon={<FaInfoCircle size={28} />}
+                        title="Explainable"
+                        desc="Understand why we recommend each alternative product"
                     />
                 </div>
-                <button
-                    onClick={handleVisualSearch}
-                    disabled={!selectedImage || loading}
-                    className={`w-full text-white font-medium rounded-lg text-sm px-5 py-2.5 text-center ${!selectedImage || loading ? 'bg-gray-400' : 'bg-blue-600 hover:bg-blue-700'}`}
-                >
-                    {loading ? 'Processing...' : 'Search with Image'}
-                </button>
-            </div>
-        </div>
+            </section>
+
+            {/* Categories Section */}
+            <section className="mb-20">
+                <h3 className="text-3xl font-bold text-center text-primary mb-12">Shop by Category</h3>
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+                    {categories.map(cat => (
+                        <Link to={`/results?category=${cat.id}`} key={cat.id} className="bg-white p-8 rounded-2xl shadow-sm hover:shadow-md hover:-translate-y-1 transition-all duration-300 flex flex-col items-center border border-transparent hover:border-accent/20 group">
+                            <div className="w-16 h-16 rounded-full bg-accent/10 flex items-center justify-center text-accent mb-4 group-hover:bg-accent group-hover:text-white transition-colors">
+                                {/* Simple placeholder icons logic */}
+                                <div className="w-8 h-8 bg-current rounded-sm opacity-50"></div>
+                            </div>
+                            <h4 className="font-bold text-primary group-hover:text-accent transition-colors">{cat.name}</h4>
+                            <p className="text-sm text-gray-500 mt-1">Explore</p>
+                        </Link>
+                    ))}
+                </div>
+            </section>
+
+            {/* CTA Section */}
+            <section className="bg-white rounded-3xl p-12 text-center shadow-lg border border-gray-100">
+                <h3 className="text-3xl font-bold text-primary mb-4">Ready to shop smarter?</h3>
+                <p className="text-lg text-gray-600 mb-8 max-w-2xl mx-auto">
+                    Explore thousands of products with budget-aware recommendations tailored to you.
+                </p>
+                <Link to="/results" className="inline-block px-10 py-4 bg-highlight text-primary rounded-xl font-bold hover:shadow-lg hover:-translate-y-1 transition-all duration-300">
+                    Browse All Products
+                </Link>
+            </section>
+        </main>
     );
 };
+
+const FeatureCard = ({ icon, title, desc }) => (
+    <div className="bg-white p-8 rounded-2xl shadow-sm text-center hover:-translate-y-2 hover:shadow-lg transition-all duration-300 border border-transparent hover:border-gray-100">
+        <div className="w-16 h-16 mx-auto mb-6 text-accent flex items-center justify-center bg-accent/5 rounded-2xl">
+            {icon}
+        </div>
+        <h4 className="text-xl font-bold text-primary mb-3">{title}</h4>
+        <p className="text-gray-600 leading-relaxed">{desc}</p>
+    </div>
+);
 
 export default HomePage;

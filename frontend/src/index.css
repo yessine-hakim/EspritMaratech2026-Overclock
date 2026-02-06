@@ -3,10 +3,26 @@
 @tailwind utilities;
 
 :root {
-  font-family: Inter, system-ui, Avenir, Helvetica, Arial, sans-serif;
+  font-family: 'Inter', system-ui, Avenir, Helvetica, Arial, sans-serif;
+  color: #3A3A3A;
+  background-color: #F8F7F4;
 }
 
 body {
   margin: 0;
   min-height: 100vh;
+}
+
+@layer components {
+  .btn-primary {
+    @apply px-6 py-3 bg-accent text-white rounded-lg font-semibold transition hover:bg-[#0e5a56];
+  }
+
+  .btn-outline {
+    @apply px-6 py-3 bg-transparent text-accent border border-accent rounded-lg font-semibold transition hover:bg-accent-soft;
+  }
+
+  .card {
+    @apply bg-white rounded-xl shadow-sm transition transform hover:-translate-y-1 hover:shadow-md;
+  }
 }

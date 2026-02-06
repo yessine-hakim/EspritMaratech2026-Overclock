@@ -1,17 +1,21 @@
 import React, { useState } from 'react';
 import { useAuth } from '../context/AuthContext';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 
 const LoginPage = () => {
     const { login } = useAuth();
     const navigate = useNavigate();
-    const [formData, setFormData] = useState({ username: '', password: '' });
+    const [credentials, setCredentials] = useState({ username: '', password: '' });
     const [error, setError] = useState('');
+
+    const handleChange = (e) => {
+        setCredentials({ ...credentials, [e.target.name]: e.target.value });
+    };
 
     const handleSubmit = async (e) => {
         e.preventDefault();
         try {
-            await login(formData.username, formData.password);
+            await login(credentials.username, credentials.password);
             navigate('/');
         } catch (err) {
             setError('Invalid credentials');
@@ -19,32 +23,63 @@ const LoginPage = () => {
     };
 
     return (
-        <div className="max-w-md mx-auto mt-10 p-6 bg-white rounded shadow-md">
-            <h2 className="text-2xl font-bold mb-4">Login</h2>
-            {error && <p className="text-red-500 mb-4">{error}</p>}
-            <form onSubmit={handleSubmit}>
-                <div className="mb-4">
-                    <label className="block text-gray-700">Email/Username</label>
-                    <input
-                        type="text"
-                        className="w-full border p-2 rounded"
-                        value={formData.username}
-                        onChange={(e) => setFormData({ ...formData, username: e.target.value })}
-                    />
+        <div className="min-h-[calc(100vh-200px)] flex items-center justify-center bg-background py-16">
+            <div className="bg-white p-8 rounded-2xl shadow-lg max-w-md w-full border border-gray-100">
+                <div className="text-center mb-8">
+                    <h2 className="text-3xl font-bold text-primary mb-2">Welcome Back</h2>
+                    <p className="text-gray-medium">Sign in to continue to Pay4All</p>
                 </div>
-                <div className="mb-4">
-                    <label className="block text-gray-700">Password</label>
-                    <input
-                        type="password"
-                        className="w-full border p-2 rounded"
-                        value={formData.password}
-                        onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                    />
+
+                {error && (
+                    <div className="bg-red-50 text-red-600 p-4 rounded-lg mb-6 text-sm flex items-center gap-2">
+                        <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                        {error}
+                    </div>
+                )}
+
+                <form onSubmit={handleSubmit} className="space-y-6">
+                    <div>
+                        <label className="block text-sm font-semibold text-primary mb-2">Username</label>
+                        <input
+                            type="text"
+                            name="username"
+                            className="w-full px-4 py-3 rounded-lg border border-gray-light bg-gray-50 focus:bg-white focus:outline-none focus:border-accent focus:ring-2 focus:ring-accent/10 transition-colors"
+                            placeholder="Enter your username"
+                            value={credentials.username}
+                            onChange={handleChange}
+                            required
+                        />
+                    </div>
+                    <div>
+                        <label className="block text-sm font-semibold text-primary mb-2">Password</label>
+                        <input
+                            type="password"
+                            name="password"
+                            className="w-full px-4 py-3 rounded-lg border border-gray-light bg-gray-50 focus:bg-white focus:outline-none focus:border-accent focus:ring-2 focus:ring-accent/10 transition-colors"
+                            placeholder="Enter your password"
+                            value={credentials.password}
+                            onChange={handleChange}
+                            required
+                        />
+                    </div>
+
+                    <button
+                        type="submit"
+                        className="w-full py-4 bg-accent text-white rounded-xl font-bold hover:bg-[#0e5a56] transition-all transform hover:-translate-y-1 shadow-lg shadow-accent/20"
+                    >
+                        Sign In
+                    </button>
+                </form>
+
+                <div className="mt-8 text-center text-sm text-gray-medium">
+                    Don't have an account?{' '}
+                    <Link to="/register" className="text-accent font-semibold hover:underline">
+                        Register here
+                    </Link>
                 </div>
-                <button type="submit" className="w-full bg-blue-600 text-white p-2 rounded hover:bg-blue-700">
-                    Login
-                </button>
-            </form>
+            </div>
         </div>
     );
 };

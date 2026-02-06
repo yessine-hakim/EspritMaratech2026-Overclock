@@ -77,6 +77,7 @@ python -m venv venv
 pip install -r requirements.txt
 
 # Run Migrations
+python manage.py makemigrations
 python manage.py migrate
 
 # Start Backend Server

@@ -1,63 +1,110 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useCart } from '../context/CartContext';
-import { FaShoppingCart, FaUser, FaSignOutAlt, FaSearch } from 'react-icons/fa';
+import { FaShoppingCart, FaUser, FaSignOutAlt, FaSearch, FaCamera } from 'react-icons/fa';
 
 const Navbar = () => {
     const { user, logout } = useAuth();
     const { cart } = useCart();
     const navigate = useNavigate();
-    const [searchTerm, setSearchTerm] = React.useState('');
+    const [searchTerm, setSearchTerm] = useState('');
+    const [selectedImage, setSelectedImage] = useState(null);
 
     const handleSearch = (e) => {
         e.preventDefault();
-        navigate(`/results?q=${searchTerm}`);
+        // If image is selected, we should ideally handle visual search here or redirect
+        // For now, let's just text search if no image logic in this simple navbar
+        if (searchTerm.trim()) {
+            navigate(`/results?q=${searchTerm}`);
+        }
+    };
+
+    const handleImageUpload = (e) => {
+        const file = e.target.files[0];
+        if (file) {
+            // Redirect to homepage with state or handle visual search directly?
+            // The backend uses a form post to /products/visual-search/
+            // In React, we usually want to stay SPA. 
+            // Let's redirect to Home for now or implement a direct API call here?
+            // Based on Home.jsx, it handles it there. 
+            // Let's simplified navigation to home with state for now
+            navigate('/', { state: { imageUpload: file } });
+        }
     };
 
     return (
-        <nav className="bg-blue-600 text-white p-4 shadow-md">
-            <div className="container mx-auto flex justify-between items-center">
-                <Link to="/" className="text-2xl font-bold">Pay4All</Link>
+        <header className="bg-white border-b border-gray-light sticky top-0 z-50 shadow-sm">
+            <nav className="container mx-auto px-4 py-4 flex items-center justify-between gap-8">
+                {/* Logo Section */}
+                <div className="flex flex-col min-w-[200px]">
+                    <Link to="/" className="text-primary hover:text-primary decoration-0">
+                        <h1 className="text-2xl font-bold m-0 leading-tight">Pay4All</h1>
+                        <p className="text-xs text-accent font-medium uppercase tracking-wider m-0">Shop Smart, Within Budget</p>
+                    </Link>
+                </div>
 
-                <form onSubmit={handleSearch} className="flex-1 mx-4 max-w-lg flex">
-                    <input
-                        type="text"
-                        placeholder="Search products..."
-                        className="w-full p-2 rounded-l text-gray-800"
-                        value={searchTerm}
-                        onChange={(e) => setSearchTerm(e.target.value)}
-                    />
-                    <button type="submit" className="bg-blue-800 p-2 rounded-r hover:bg-blue-900">
-                        <FaSearch />
+                {/* Search Section */}
+                <form onSubmit={handleSearch} className="flex-1 max-w-lg flex items-center gap-2">
+                    <div className="relative flex-1 flex items-center">
+                        <input
+                            type="text"
+                            placeholder="Search by voice, text, or image..."
+                            className="w-full py-3 px-4 border border-gray-light rounded-lg text-text bg-white focus:outline-none focus:border-accent focus:ring-2 focus:ring-accent/10 transition-colors"
+                            value={searchTerm}
+                            onChange={(e) => setSearchTerm(e.target.value)}
+                        />
+                        {/* Camera Icon Overlay or Button */}
+                        <label htmlFor="nav-image-upload" className="absolute right-3 text-gray-400 hover:text-accent cursor-pointer transition-colors p-1">
+                            <FaCamera size={18} />
+                        </label>
+                        <input
+                            type="file"
+                            id="nav-image-upload"
+                            accept="image/*"
+                            className="hidden"
+                            onChange={handleImageUpload}
+                        />
+                    </div>
+                    <button type="submit" className="bg-accent text-white px-6 py-3 rounded-lg font-semibold hover:bg-[#0e5a56] transition-colors">
+                        Search
                     </button>
                 </form>
 
-                <div className="flex items-center space-x-4">
+                {/* Account Actions */}
+                <div className="flex items-center gap-4">
                     {user ? (
                         <>
-                            <span className="flex items-center"><FaUser className="mr-2" /> {user.first_name || user.email}</span>
-                            <Link to="/cart" className="relative flex items-center">
-                                <FaShoppingCart className="text-xl" />
+                            <Link to="/cart" className="relative text-gray-medium hover:text-accent transition-colors p-2">
+                                <FaShoppingCart size={24} />
                                 {cart?.total_items > 0 && (
-                                    <span className="absolute -top-2 -right-2 bg-red-500 text-xs rounded-full h-5 w-5 flex items-center justify-center">
+                                    <span className="absolute -top-1 -right-1 bg-[#EE4D2D] text-white text-[10px] font-bold h-5 w-5 rounded-full flex items-center justify-center">
                                         {cart.total_items}
                                     </span>
                                 )}
                             </Link>
-                            <button onClick={logout} className="flex items-center hover:text-red-200">
-                                <FaSignOutAlt />
+
+                            <div className="h-10 w-10 flex items-center justify-center bg-gray-50 rounded-full text-primary hover:bg-gray-light cursor-pointer" title={`Logged in as ${user.first_name || user.email}`}>
+                                <FaUser size={20} />
+                            </div>
+
+                            <button onClick={logout} className="text-gray-medium hover:text-[#ff4757] transition-colors p-2" title="Logout">
+                                <FaSignOutAlt size={20} />
                             </button>
                         </>
                     ) : (
                         <>
-                            <Link to="/login" className="hover:underline">Login</Link>
-                            <Link to="/register" className="hover:underline">Register</Link>
+                            <Link to="/login" className="px-6 py-3 text-accent border border-accent rounded-lg font-semibold hover:bg-accent-soft transition-colors">
+                                Login
+                            </Link>
+                            <Link to="/register" className="px-6 py-3 bg-accent text-white rounded-lg font-semibold hover:bg-[#0e5a56] transition-colors">
+                                Register
+                            </Link>
                         </>
                     )}
                 </div>
-            </div>
-        </nav>
+            </nav>
+        </header>
     );
 };
 
