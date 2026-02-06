@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useCart } from '../context/CartContext';
 import { FaShoppingCart, FaUser, FaSignOutAlt, FaSearch, FaCamera } from 'react-icons/fa';
+import api from '../api';
 
 const Navbar = () => {
     const { user, logout } = useAuth();
@@ -20,16 +21,21 @@ const Navbar = () => {
         }
     };
 
-    const handleImageUpload = (e) => {
+    const handleImageUpload = async (e) => {
         const file = e.target.files[0];
         if (file) {
-            // Redirect to homepage with state or handle visual search directly?
-            // The backend uses a form post to /products/visual-search/
-            // In React, we usually want to stay SPA. 
-            // Let's redirect to Home for now or implement a direct API call here?
-            // Based on Home.jsx, it handles it there. 
-            // Let's simplified navigation to home with state for now
-            navigate('/', { state: { imageUpload: file } });
+            const formData = new FormData();
+            formData.append('image', file);
+
+            try {
+                const response = await api.post('/api/products/api/visual-search/', formData, {
+                    headers: { 'Content-Type': 'multipart/form-data' }
+                });
+                navigate('/results', { state: { products: response.data.results, explanation: response.data.explanation } });
+            } catch (error) {
+                console.error("Visual search failed", error);
+                alert("Visual search failed. Please try again.");
+            }
         }
     };
 

@@ -21,10 +21,10 @@ from . import views
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('', views.home, name='home'),
-    path('products/', include('products.urls')),
-    path('api/', include('users.urls')),
+    path('api/products/', include('products.urls')),
+    path('api/users/', include('users.urls')),
     path('api/recommendations/', include('recommendations.urls')), 
-    path('cart/', include('cart.urls')),
+    path('api/cart/', include('cart.urls')),
     # The templates say action="/api/login" etc. so I should match that.
 
 ]
