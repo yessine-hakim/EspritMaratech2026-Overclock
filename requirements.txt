@@ -3,7 +3,6 @@ psycopg2-binary
 dj-database-url
 python-dotenv
 psycopg2-binary
-deep-translator
 groq
 langchain_community
 langchain_qdrant

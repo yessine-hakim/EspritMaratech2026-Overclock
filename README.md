@@ -1,6 +1,6 @@
 # Pay4All - Context-Aware FinCommerce Engine
 
-[![Hackathon](https://img.shields.io/badge/Hackathon-Vectors%20In%20Orbit-blue)](https://qdrant.tech/)
+[![Hackathon](https://img.shields.io/badge/Hackathon-MaraTech-blue)](https://qdrant.tech/)
 [![Django](https://img.shields.io/badge/Backend-Django-092e20)](https://www.djangoproject.com/)
 [![Qdrant](https://img.shields.io/badge/Vector%20DB-Qdrant-red)](https://qdrant.tech/)
 
@@ -53,31 +53,30 @@ Pay4All follows a modular three-layer design:
 
 ### Installation
 
-1. **Clone the repository**:
+#### 1. **Clone the repository**:
    ```bash
-   git clone https://github.com/EdamHakim/AI-Echri.git
+   git clone https://github.com/yessine-hakim/Pay4All.git
    ```
 
-2. **Environment Setup**:
-   ```bash
-   python -m venv venv
-   .\venv\Scripts\activate  # Windows
-   source venv/bin/activate # Unix/macOS
-   pip install -r requirements.txt
-   ```
+#### 2. Create Virtual Environment
+**Windows:**
+```bash
+python -m venv env
+.\env\Scripts\activate
+```
+**macOS/Linux:**
+```bash
+python3 -m venv env
+source env/bin/activate
+```
 
-3. **Database & Migrations**:
-   ```bash
-   cd pay4all
-   python manage.py migrate
-   ```
+#### 3. Install Dependencies
+```bash
+pip install -r requirements.txt
+```
 
-4. **Run Development Server**:
-   ```bash
-   python manage.py runserver
-   ```
-
----
-
-## 📄 Documentation
-For a deep dive into the architecture and mathematical modeling, refer to our [Technical Report](technical_report.tex).
+#### 4. Run the Development Server
+```bash
+python manage.py runserver
+```
+Visit `http://127.0.0.1:8000/` to access the application.
