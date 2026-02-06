@@ -41,12 +41,12 @@ const LoginPage = () => {
 
                 <form onSubmit={handleSubmit} className="space-y-6">
                     <div>
-                        <label className="block text-sm font-semibold text-primary mb-2">Username</label>
+                        <label className="block text-sm font-semibold text-primary mb-2">Email Address</label>
                         <input
-                            type="text"
+                            type="email"
                             name="username"
                             className="w-full px-4 py-3 rounded-lg border border-gray-light bg-gray-50 focus:bg-white focus:outline-none focus:border-accent focus:ring-2 focus:ring-accent/10 transition-colors"
-                            placeholder="Enter your username"
+                            placeholder="Enter your email"
                             value={credentials.username}
                             onChange={handleChange}
                             required

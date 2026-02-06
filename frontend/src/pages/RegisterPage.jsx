@@ -5,7 +5,19 @@ import { useNavigate, Link } from 'react-router-dom';
 const RegisterPage = () => {
     const { register } = useAuth();
     const navigate = useNavigate();
-    const [formData, setFormData] = useState({ username: '', email: '', password: '', confirmPassword: '' });
+    const [formData, setFormData] = useState({
+        email: '',
+        password: '',
+        confirmPassword: '',
+        first_name: '',
+        last_name: '',
+        monthly_budget: '',
+        max_single_purchase: '',
+        preferred_price_range_min: '',
+        preferred_price_range_max: '',
+        payment_preferences: 'card',
+        currency: 'USD'
+    });
     const [error, setError] = useState('');
 
     const handleChange = (e) => {
@@ -18,63 +30,60 @@ const RegisterPage = () => {
             setError("Passwords don't match");
             return;
         }
+
         try {
-            await register(formData.username, formData.email, formData.password);
+            // Prepare data for API (remove confirmPassword)
+            const { confirmPassword, ...apiData } = formData;
+            await register(apiData);
             navigate('/');
         } catch (err) {
-            setError(err.response?.data?.detail || 'Registration failed');
+            console.error(err);
+            // detailed error from backend serializer
+            const msg = err.response?.data ? JSON.stringify(err.response.data) : 'Registration failed';
+            setError(msg);
         }
     };
 
     return (
-        <div className="min-h-[calc(100vh-200px)] flex items-center justify-center bg-background py-16">
-            <div className="bg-white p-8 rounded-2xl shadow-lg max-w-md w-full border border-gray-100">
+        <div className="min-h-screen flex items-center justify-center bg-background py-16 px-4">
+            <div className="bg-white p-8 rounded-2xl shadow-lg max-w-2xl w-full border border-gray-100">
                 <div className="text-center mb-8">
                     <h2 className="text-3xl font-bold text-primary mb-2">Create Account</h2>
                     <p className="text-gray-medium">Join Pay4All for smarter shopping</p>
                 </div>
 
                 {error && (
-                    <div className="bg-red-50 text-red-600 p-4 rounded-lg mb-6 text-sm flex items-center gap-2">
-                        <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                        </svg>
+                    <div className="bg-red-50 text-red-600 p-4 rounded-lg mb-6 text-sm break-words">
                         {error}
                     </div>
                 )}
 
-                <form onSubmit={handleSubmit} className="space-y-5">
-                    <div>
-                        <label className="block text-sm font-semibold text-primary mb-2">Username</label>
-                        <input
-                            type="text"
-                            name="username"
-                            className="w-full px-4 py-3 rounded-lg border border-gray-light bg-gray-50 focus:bg-white focus:outline-none focus:border-accent focus:ring-2 focus:ring-accent/10 transition-colors"
-                            placeholder="Choose a username"
-                            value={formData.username}
-                            onChange={handleChange}
-                            required
-                        />
+                <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    {/* Access Credentials */}
+                    <div className="md:col-span-2 space-y-4">
+                        <h3 className="text-lg font-semibold text-primary border-b border-gray-100 pb-2">Login Details</h3>
                     </div>
-                    <div>
-                        <label className="block text-sm font-semibold text-primary mb-2">Email Address</label>
+
+                    <div className="md:col-span-2">
+                        <label className="block text-sm font-semibold text-primary mb-2">Email Address (Username)</label>
                         <input
                             type="email"
                             name="email"
                             className="w-full px-4 py-3 rounded-lg border border-gray-light bg-gray-50 focus:bg-white focus:outline-none focus:border-accent focus:ring-2 focus:ring-accent/10 transition-colors"
-                            placeholder="Enter your email"
+                            placeholder="john@example.com"
                             value={formData.email}
                             onChange={handleChange}
                             required
                         />
                     </div>
+
                     <div>
                         <label className="block text-sm font-semibold text-primary mb-2">Password</label>
                         <input
                             type="password"
                             name="password"
                             className="w-full px-4 py-3 rounded-lg border border-gray-light bg-gray-50 focus:bg-white focus:outline-none focus:border-accent focus:ring-2 focus:ring-accent/10 transition-colors"
-                            placeholder="Create a password"
+                            placeholder="Password"
                             value={formData.password}
                             onChange={handleChange}
                             required
@@ -86,19 +95,130 @@ const RegisterPage = () => {
                             type="password"
                             name="confirmPassword"
                             className="w-full px-4 py-3 rounded-lg border border-gray-light bg-gray-50 focus:bg-white focus:outline-none focus:border-accent focus:ring-2 focus:ring-accent/10 transition-colors"
-                            placeholder="Confirm your password"
+                            placeholder="Confirm Password"
                             value={formData.confirmPassword}
                             onChange={handleChange}
                             required
                         />
                     </div>
 
-                    <button
-                        type="submit"
-                        className="w-full py-4 bg-accent text-white rounded-xl font-bold hover:bg-[#0e5a56] transition-all transform hover:-translate-y-1 shadow-lg shadow-accent/20 mt-2"
-                    >
-                        Sign Up
-                    </button>
+                    {/* Personal Info */}
+                    <div className="md:col-span-2 space-y-4 mt-4">
+                        <h3 className="text-lg font-semibold text-primary border-b border-gray-100 pb-2">Personal Information</h3>
+                    </div>
+
+                    <div>
+                        <label className="block text-sm font-semibold text-primary mb-2">First Name</label>
+                        <input
+                            type="text"
+                            name="first_name"
+                            className="w-full px-4 py-3 rounded-lg border border-gray-light bg-gray-50 focus:bg-white focus:outline-none focus:border-accent focus:ring-2 focus:ring-accent/10 transition-colors"
+                            placeholder="John"
+                            value={formData.first_name}
+                            onChange={handleChange}
+                            required
+                        />
+                    </div>
+                    <div>
+                        <label className="block text-sm font-semibold text-primary mb-2">Last Name</label>
+                        <input
+                            type="text"
+                            name="last_name"
+                            className="w-full px-4 py-3 rounded-lg border border-gray-light bg-gray-50 focus:bg-white focus:outline-none focus:border-accent focus:ring-2 focus:ring-accent/10 transition-colors"
+                            placeholder="Doe"
+                            value={formData.last_name}
+                            onChange={handleChange}
+                            required
+                        />
+                    </div>
+
+                    {/* Financial Context */}
+                    <div className="md:col-span-2 space-y-4 mt-4">
+                        <h3 className="text-lg font-semibold text-primary border-b border-gray-100 pb-2">Financial Context</h3>
+                    </div>
+
+                    <div>
+                        <label className="block text-sm font-semibold text-primary mb-2">Monthly Budget</label>
+                        <input
+                            type="number"
+                            name="monthly_budget"
+                            className="w-full px-4 py-3 rounded-lg border border-gray-light bg-gray-50 focus:bg-white focus:outline-none focus:border-accent focus:ring-2 focus:ring-accent/10 transition-colors"
+                            placeholder="0.00"
+                            value={formData.monthly_budget}
+                            onChange={handleChange}
+                        />
+                    </div>
+                    <div>
+                        <label className="block text-sm font-semibold text-primary mb-2">Max Single Purchase</label>
+                        <input
+                            type="number"
+                            name="max_single_purchase"
+                            className="w-full px-4 py-3 rounded-lg border border-gray-light bg-gray-50 focus:bg-white focus:outline-none focus:border-accent focus:ring-2 focus:ring-accent/10 transition-colors"
+                            placeholder="0.00"
+                            value={formData.max_single_purchase}
+                            onChange={handleChange}
+                        />
+                    </div>
+
+                    <div>
+                        <label className="block text-sm font-semibold text-primary mb-2">Min Price Range</label>
+                        <input
+                            type="number"
+                            name="preferred_price_range_min"
+                            className="w-full px-4 py-3 rounded-lg border border-gray-light bg-gray-50 focus:bg-white focus:outline-none focus:border-accent focus:ring-2 focus:ring-accent/10 transition-colors"
+                            placeholder="0.00"
+                            value={formData.preferred_price_range_min}
+                            onChange={handleChange}
+                        />
+                    </div>
+                    <div>
+                        <label className="block text-sm font-semibold text-primary mb-2">Max Price Range</label>
+                        <input
+                            type="number"
+                            name="preferred_price_range_max"
+                            className="w-full px-4 py-3 rounded-lg border border-gray-light bg-gray-50 focus:bg-white focus:outline-none focus:border-accent focus:ring-2 focus:ring-accent/10 transition-colors"
+                            placeholder="0.00"
+                            value={formData.preferred_price_range_max}
+                            onChange={handleChange}
+                        />
+                    </div>
+
+                    <div>
+                        <label className="block text-sm font-semibold text-primary mb-2">Payment Preference</label>
+                        <select
+                            name="payment_preferences"
+                            className="w-full px-4 py-3 rounded-lg border border-gray-light bg-gray-50 focus:bg-white focus:outline-none focus:border-accent focus:ring-2 focus:ring-accent/10 transition-colors"
+                            value={formData.payment_preferences}
+                            onChange={handleChange}
+                        >
+                            <option value="card">Card</option>
+                            <option value="installments">Installments</option>
+                            <option value="cash">Cash</option>
+                        </select>
+                    </div>
+
+                    <div>
+                        <label className="block text-sm font-semibold text-primary mb-2">Currency</label>
+                        <select
+                            name="currency"
+                            className="w-full px-4 py-3 rounded-lg border border-gray-light bg-gray-50 focus:bg-white focus:outline-none focus:border-accent focus:ring-2 focus:ring-accent/10 transition-colors"
+                            value={formData.currency}
+                            onChange={handleChange}
+                        >
+                            <option value="USD">USD</option>
+                            <option value="EUR">EUR</option>
+                            <option value="GBP">GBP</option>
+                        </select>
+                    </div>
+
+                    <div className="md:col-span-2 mt-6">
+                        <button
+                            type="submit"
+                            className="w-full py-4 bg-accent text-white rounded-xl font-bold hover:bg-[#0e5a56] transition-all transform hover:-translate-y-1 shadow-lg shadow-accent/20"
+                        >
+                            Create Account
+                        </button>
+                    </div>
                 </form>
 
                 <div className="mt-8 text-center text-sm text-gray-medium">

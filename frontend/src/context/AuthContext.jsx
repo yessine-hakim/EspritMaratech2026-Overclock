@@ -42,9 +42,13 @@ export const AuthProvider = ({ children }) => {
 
     const register = async (userData) => {
         await api.get('/api/users/csrf/');
-        const response = await api.post('/api/users/register/', userData);
-        setUser(response.data); // Assuming register logs in automatically
-        return response.data;
+        try {
+            const response = await api.post('/api/users/register/', userData);
+            setUser(response.data);
+            return response.data;
+        } catch (error) {
+            throw error;
+        }
     };
 
     return (
