@@ -13,3 +13,5 @@ qdrant-client
 groq
 requests
 Pillow
+djangorestframework
+django-cors-headers
