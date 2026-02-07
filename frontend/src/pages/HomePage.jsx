@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { FaCamera, FaSearch, FaCheckCircle, FaWallet, FaChartLine, FaInfoCircle } from 'react-icons/fa';
 import api from '../api';
@@ -6,19 +6,27 @@ import api from '../api';
 const HomePage = () => {
     const navigate = useNavigate();
     const [searchTerm, setSearchTerm] = useState('');
+    const [categories, setCategories] = useState([]);
+
+    useEffect(() => {
+        // Fetch categories from API
+        const fetchCategories = async () => {
+            try {
+                const response = await api.get('/products/api/categories/');
+                setCategories(response.data);
+            } catch (error) {
+                console.error('Error fetching categories:', error);
+                // Fallback to empty array or placeholder
+                setCategories([]);
+            }
+        };
+        fetchCategories();
+    }, []);
 
     const handleSearch = (e) => {
         e.preventDefault();
         navigate(`/results?q=${searchTerm}`);
     };
-
-    // Placeholder data for categories to match template
-    const categories = [
-        { id: 1, name: 'Electronics', icon: 'rect' },
-        { id: 2, name: 'Home & Garden', icon: 'home' },
-        { id: 3, name: 'Beauty & Health', icon: 'heart' },
-        { id: 4, name: 'Toys & Games', icon: 'smile' },
-    ];
 
     return (
         <main className="container mx-auto px-4 py-12 md:py-16" id="main-content">

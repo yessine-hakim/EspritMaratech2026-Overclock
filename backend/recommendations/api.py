@@ -4,6 +4,11 @@ from django.views.decorators.http import require_http_methods
 import json
 from .graph import create_recommendation_graph
 from users.models import User
+from products.anomaly_detection import SearchAnomalyDetector
+from datetime import datetime
+
+# Global search anomaly detector
+search_detector = SearchAnomalyDetector()
 
 @csrf_exempt
 @require_http_methods(["POST"])
@@ -13,15 +18,18 @@ def recommend(request):
         query = None
         user_id = None
         image_file = None
+        diversity = 0.7  # Default MMR diversity
         
         if request.content_type == 'application/json':
             data = json.loads(request.body)
             query = data.get("query")
             user_id = data.get("user_id")
+            diversity = float(data.get("diversity", 0.7))
         else:
             query = request.POST.get("query")
             user_id = request.POST.get("user_id")
             image_file = request.FILES.get("image")
+            diversity = float(request.POST.get("diversity", 0.7))
             
         if not query and not image_file:
             return JsonResponse({"error": "Query or image is required"}, status=400)
@@ -87,10 +95,26 @@ def recommend(request):
             "filtered_products": [],
             "final_recommendations": [],
             "explanation": "",
-            "visual_ids": visual_ids
+            "visual_ids": visual_ids,
+            "diversity": diversity  # Pass MMR diversity parameter
         }
         
         result = app.invoke(initial_state)
+        
+        # Track search for anomaly detection
+        results_count = len(result.get("final_recommendations", []))
+        search_detector.track_search(
+            user_id=user_id,
+            query=query or "[image search]",
+            results_count=results_count,
+            timestamp=datetime.now()
+        )
+        
+        # Check for bot behavior
+        if user_id and search_detector.detect_bot_behavior(user_id):
+            import logging
+            logger = logging.getLogger(__name__)
+            logger.warning(f"Potential bot detected: user {user_id}")
         
         return JsonResponse({
             "inferred_budget": result.get("inferred_budget"),

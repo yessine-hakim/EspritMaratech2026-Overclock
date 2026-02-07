@@ -183,3 +183,21 @@ class ResultsAPIView(views.APIView):
         except Exception:
             from django.db.models import Q
             return Product.objects.filter(title__icontains=query)
+
+class CategoryListAPIView(generics.ListAPIView):
+    """API endpoint to list all categories."""
+    queryset = Category.objects.all().order_by('name')
+    serializer_class = ProductSerializer  # Will use CategorySerializer
+    permission_classes = [permissions.AllowAny]
+    
+    def list(self, request, *args, **kwargs):
+        categories = self.get_queryset()
+        # Return simple category data
+        data = [
+            {
+                'id': cat.id,
+                'name': cat.name
+            }
+            for cat in categories
+        ]
+        return Response(data)

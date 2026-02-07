@@ -83,20 +83,33 @@ def budget_profiling_node(state: RecommendationState) -> dict[str, Any]:
 from products.models import Product
 
 def retrieval_node(state: RecommendationState) -> dict[str, Any]:
-    """Retrieve candidate products from Qdrant and/or DB."""
+    """Retrieve candidate products from Qdrant and/or DB with MMR for diversity."""
     query = state["query"]
     visual_ids = state.get("visual_ids", [])
+    diversity = state.get("diversity", 0.7)  # Default diversity level
     
     retrieved = []
     
-    # 1. Start with Text Retrieval (if query exists)
+    # 1. Start with Text Retrieval using MMR (if query exists)
     if query.strip():
-        vector_store = get_retriever()
-        text_results = vector_store.similarity_search_with_score(query, k=20)
+        from products.mmr_search import search_products_with_mmr
+        from langchain_community.embeddings.fastembed import FastEmbedEmbeddings
         
-        for doc, score in text_results:
-            product = doc.metadata
-            product['similarity_score'] = score
+        # Generate query embedding
+        embeddings = FastEmbedEmbeddings(model_name="BAAI/bge-small-en-v1.5")
+        query_vector = embeddings.embed_query(query)
+        
+        # Use MMR search for diverse results
+        mmr_results = search_products_with_mmr(
+            query_vector=query_vector,
+            limit=20,
+            diversity=diversity,
+            score_threshold=0.3
+        )
+        
+        for result in mmr_results:
+            product = result.payload
+            product['similarity_score'] = result.score
             retrieved.append(product)
             
     # 2. Incorporate Visual Results (if image was uploaded)

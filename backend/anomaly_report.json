@@ -1,0 +1,146 @@
+{
+  "product_anomalies": {
+    "pricing_anomalies": [
+      {
+        "product_id": 250,
+        "product_title": "Moutarde 10.50 g",
+        "price": 20.74,
+        "rating": 1.0,
+        "nbr_rating": 18,
+        "type": "pricing_anomaly"
+      },
+      {
+        "product_id": 246,
+        "product_title": "Sojasauce",
+        "price": 2.59,
+        "rating": 1.0,
+        "nbr_rating": 451,
+        "type": "pricing_anomaly"
+      },
+      {
+        "product_id": 236,
+        "product_title": "flan caram jao dan",
+        "price": 24.41,
+        "rating": 1.0,
+        "nbr_rating": 435,
+        "type": "pricing_anomaly"
+      },
+      {
+        "product_id": 231,
+        "product_title": "Total",
+        "price": 23.71,
+        "rating": 4.0,
+        "nbr_rating": 20,
+        "type": "pricing_anomaly"
+      },
+      {
+        "product_id": 217,
+        "product_title": "Biscoff à tartiner",
+        "price": 21.72,
+        "rating": 1.0,
+        "nbr_rating": 45,
+        "type": "pricing_anomaly"
+      },
+      {
+        "product_id": 188,
+        "product_title": "Mon Cherie",
+        "price": 23.44,
+        "rating": 1.0,
+        "nbr_rating": 160,
+        "type": "pricing_anomaly"
+      },
+      {
+        "product_id": 175,
+        "product_title": "Pêche Ice Tea",
+        "price": 24.92,
+        "rating": 2.0,
+        "nbr_rating": 224,
+        "type": "pricing_anomaly"
+      },
+      {
+        "product_id": 171,
+        "product_title": "Biscuits Germe de Blé et Pépites de Chocolat",
+        "price": 1.53,
+        "rating": 2.0,
+        "nbr_rating": 446,
+        "type": "pricing_anomaly"
+      },
+      {
+        "product_id": 87,
+        "product_title": "Soft Pitted Dates",
+        "price": 19.78,
+        "rating": 2.0,
+        "nbr_rating": 20,
+        "type": "pricing_anomaly"
+      },
+      {
+        "product_id": 63,
+        "product_title": "Tranches Au Goût Cheddar",
+        "price": 10.59,
+        "rating": 1.0,
+        "nbr_rating": 495,
+        "type": "pricing_anomaly"
+      },
+      {
+        "product_id": 62,
+        "product_title": "Carré Frais - Nature",
+        "price": 2.1,
+        "rating": 2.0,
+        "nbr_rating": 19,
+        "type": "pricing_anomaly"
+      },
+      {
+        "product_id": 34,
+        "product_title": "Шоколад 85% какаова маса",
+        "price": 1.6,
+        "rating": 2.0,
+        "nbr_rating": 361,
+        "type": "pricing_anomaly"
+      },
+      {
+        "product_id": 22,
+        "product_title": "Eau",
+        "price": 19.57,
+        "rating": 5.0,
+        "nbr_rating": 485,
+        "type": "pricing_anomaly"
+      },
+      {
+        "product_id": 15,
+        "product_title": "Coca-Cola",
+        "price": 5.43,
+        "rating": 1.0,
+        "nbr_rating": 2,
+        "type": "pricing_anomaly"
+      }
+    ],
+    "data_quality_issues": [
+      {
+        "product_id": 72,
+        "product_title": "Kiri",
+        "issues": [
+          "missing_description"
+        ],
+        "type": "data_quality"
+      }
+    ],
+    "duplicate_barcodes": [],
+    "summary": {
+      "total_pricing_anomalies": 14,
+      "total_data_quality_issues": 1,
+      "total_duplicate_barcodes": 0
+    }
+  },
+  "search_anomalies": {
+    "zero_result_patterns": [],
+    "search_statistics": {
+      "total_searches": 0,
+      "unique_users": 0,
+      "avg_results": 0,
+      "zero_result_rate": 0
+    },
+    "summary": {
+      "total_zero_result_patterns": 0
+    }
+  }
+}

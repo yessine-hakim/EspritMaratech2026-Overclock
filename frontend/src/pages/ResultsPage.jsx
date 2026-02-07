@@ -18,14 +18,16 @@ const ResultsPage = () => {
 
     // Fetch categories for sidebar
     useEffect(() => {
-        // Mock categories or fetch from API if available
-        // For now hardcoding to match HomePage logic until API endpoint exists
-        setCategories([
-            { id: 1, name: 'Electronics', count: 120 },
-            { id: 2, name: 'Home & Garden', count: 85 },
-            { id: 3, name: 'Beauty & Health', count: 45 },
-            { id: 4, name: 'Toys & Games', count: 30 },
-        ]);
+        const fetchCategories = async () => {
+            try {
+                const response = await api.get('/products/api/categories/');
+                setCategories(response.data);
+            } catch (error) {
+                console.error('Error fetching categories:', error);
+                setCategories([]);
+            }
+        };
+        fetchCategories();
     }, []);
 
     useEffect(() => {
@@ -97,8 +99,7 @@ const ResultsPage = () => {
                                     className="w-5 h-5 rounded border-gray-300 text-accent focus:ring-accent"
                                     aria-label={`Filter by ${cat.name}`}
                                 />
-                                <span className="text-gray-600 group-hover:text-accent transition-colors" aria-hidden="true">{cat.name}</span>
-                                <span className="ml-auto text-xs text-gray-400 bg-gray-100 px-2 py-1 rounded-full">{cat.count}</span>
+                                <span className="text-gray-600 group-hover:text-accent transition-colors">{cat.name}</span>
                             </label>
                         ))}
                     </div>
