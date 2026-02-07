@@ -70,21 +70,43 @@ def intent_classification_node(state: RecommendationState) -> dict[str, Any]:
     }
 
 def banking_node(state: RecommendationState) -> dict[str, Any]:
-    """Handle banking inquiries (Balance, Transactions)."""
-    user = state["user_profile"].get("user_obj") # Passed from view
+    """Handle banking inquiries and dynamic affordability checks."""
+    user = state["user_profile"].get("user_obj")
     if not user:
-        return {"explanation": "User authentication required for banking actions."}
+        return {"explanation": "User authentication required."}
     
     account = BankAccount.objects.filter(user=user).first()
     if not account:
-        return {"explanation": "No bank account found for this user."}
+        return {"explanation": "Bank account not found."}
     
+    # Enrich bank_data with budget context
     bank_info = {
         "balance": float(account.balance),
         "currency": account.currency,
-        "iban": account.iban
+        "monthly_budget": float(user.monthly_budget or 0),
+        "cart_total": float(state.get("cart_total", 0))
     }
     
+    # Contextual Affordability Check
+    visual_ids = state.get("visual_ids", [])
+    if visual_ids:
+        try:
+            from products.models import Product
+            target_product = Product.objects.get(pk=visual_ids[0])
+            price = float(target_product.price or target_product.selling_price or 0)
+            bank_info["target_product_price"] = price
+            bank_info["target_product_title"] = target_product.title
+            
+            # Calculation
+            total_pending = bank_info["cart_total"] + price
+            bank_info["is_affordable_balance"] = bank_info["balance"] >= total_pending
+            bank_info["is_within_monthly_budget"] = bank_info["monthly_budget"] >= total_pending
+            
+            percent_of_budget = (total_pending / bank_info["monthly_budget"] * 100) if bank_info["monthly_budget"] > 0 else 0
+            bank_info["budget_impact_percent"] = round(percent_of_budget, 1)
+        except Exception as e:
+            print(f"Affordability calculation error: {e}")
+            
     return {"bank_data": bank_info}
 
 def safety_agent_node(state: RecommendationState) -> dict[str, Any]:

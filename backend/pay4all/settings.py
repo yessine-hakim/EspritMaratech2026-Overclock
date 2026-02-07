@@ -44,6 +44,7 @@ INSTALLED_APPS = [
     'banking.apps.BankingConfig',
     'rest_framework',
     'corsheaders',
+    'voiceid',
 ]
 
 MIDDLEWARE = [

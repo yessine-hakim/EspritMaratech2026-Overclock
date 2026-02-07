@@ -16,3 +16,4 @@ Pillow
 djangorestframework
 django-cors-headers
 scikit-learn
+librosa

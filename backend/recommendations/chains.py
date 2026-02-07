@@ -136,22 +136,17 @@ def get_synthesis_chain():
         1. **SHOPPING**:
            - Present products fitting the budget.
            - If a Safety check was done: Mention if it fits the current balance.
-           - Example: "I found 3 laptops. They fit your $500 budget and your total balance is enough."
         
-        2. **BANKING**:
+        2. **BANKING / STATUS**:
            - **Balance check**: State the amount clearly.
-           - **Transfer**: Explain WHY it happened or if it was blocked.
-           - Example: "I transferred 50 TD to Ahmed because your balance was sufficient. Your new balance is 70 TD."
-           - Safety fail: "I cannot transfer 500 TD as it exceeds your weekly limit. Please confirm with a manual signature if you wish to proceed."
-        
-        4. **STATUS / COMPLEX**:
-           - **Compound query**: Combine balance and cart info.
-           - Example: "You have 150 TND in your account, and your cart total is 45 TND. Yes, you can comfortably afford your items."
+           - **Affordability**: Provide a detailed breakdown.
+           - Example: "The {product} costs {price}. With your cart total of {cart}, you would spend {total}. This is within your {budget} monthly budget and represents {impact}% of it. Yes, you can afford it!"
+           - Example: "This item fits your balance, but it would exceed your monthly budget by {diff}. I suggest waiting or finding a cheaper alternative."
         
         3. **NAVIGATION**:
            - Explain how to use the app.
         
-        **Always prioritize simple explanations of results.**
+        **Always prioritize simple, data-backed explanations.**
         """),
         ("human", """User Query: {query}
         Detected Intent: {intent}

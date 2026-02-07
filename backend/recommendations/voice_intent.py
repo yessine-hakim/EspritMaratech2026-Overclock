@@ -22,6 +22,7 @@ def classify_voice_intent(request):
     try:
         data = json.loads(request.body)
         transcript = data.get("transcript", "").strip()
+        product_id = data.get("productId") # Handled from frontend GlobalVoiceCommander
         
         if not transcript:
             return JsonResponse({"error": "No transcript provided"}, status=400)
@@ -39,11 +40,6 @@ def classify_voice_intent(request):
         parser = JsonOutputParser(pydantic_object=VoiceIntentOutput)
 
         prompt = ChatPromptTemplate.from_messages([
-            # Task: Implement Voice-Driven Authentication (English)
-            # - [x] Update Voice Brain for Auth intents (English extraction)
-            # - [x] Implement multi-step conversational state in GlobalVoiceCommander
-            # - [x] Add field extraction for email/password/name
-            # - [x] Verify 100% hands-free Multilingual Login & Registration
             ("system", """You are the AI Voice Brain for Pay4All, an inclusive shopping app.
             Your job is to convert a user's voice transcript into a structured JSON command for the frontend.
 
@@ -53,28 +49,29 @@ def classify_voice_intent(request):
             2. Action: 'search'
                Target: The search query string (e.g., 'blue shoes')
             3. Action: 'accessibility'
-               Targets: 'highContrast', 'fontSize', 'simplifiedMode', 'readabilityMode', 'grayscale', 'visualAlerts', 'focusMode'
-               Value: true/false for toggles, or a number (100, 150, 200, 300, 400) for fontSize.
+               Targets: 'highContrast', 'fontSize', 'simplifiedMode' etc.
             4. Action: 'banking'
                Targets: 'balance', 'transactions', 'affordability', 'transfer'
-               Value: { "amount": number, "recipient_iban": string } for transfer.
             5. Action: 'cart'
-               Targets: 'add', 'remove', 'view', 'clear', 'checkout'
-               Value: item name or index for add/remove.
-            6. Action: 'confirm'
+               Targets: 'add', 'remove', 'view', 'checkout'
+            6. Action: 'status_check'
+               Target: 'affordability', 'budget_status', 'cart_status'
+               Explain: Use this for "Can I afford this?", "How is my budget?", "What's in my cart?".
+            7. Action: 'confirm'
                Target: 'payment', 'transfer', 'generic', 'register'
-            7. Action: 'cancel'
+            8. Action: 'cancel'
                Target: 'any'
-            8. Action: 'auth'
+            9. Action: 'auth'
                Targets: 'login', 'register', 'logout', 'credential_input'
-            9. Action: 'status_check'
-               Target: 'affordability', 'balance', 'general'
             10. Action: 'chat'
                Target: 'general' (For general questions or conversation)
 
-            Output valid JSON only. Respond with helpful information in the 'response' field.
-            Example for affordability: "Yes, you have enough in your account for this item."
-            Example for adding to cart: "Adding that laptop to your cart now."
+            CONTEXTUAL GUIDANCE:
+            - If the user asks "Can I afford this?" or "Can I buy this?", set action='status_check' and target='affordability'.
+            - If the user asks about their remaining budget, set action='status_check' and target='budget_status'.
+            - If they ask about balance, action='banking' target='balance'.
+
+            Output valid JSON only. Response field is for verbal confirmation.
             """),
             ("human", "User said: {transcript}"),
         ])
@@ -85,10 +82,10 @@ def classify_voice_intent(request):
         # --- ADVANCED: Contextual Data Binding ---
         # If the query is about status/affordability, we need REAL data.
         # We'll invoke the Recommendation Graph to get a data-backed response.
-        if result['action'] in ['status_check', 'banking'] and result['target'] in ['affordability', 'balance', 'general']:
+        if result['action'] == 'status_check' or (result['action'] == 'banking' and result['target'] == 'balance'):
             from .graph import create_recommendation_graph
             from cart.models import Cart
-            from .state import RecommendationState
+            from banking.models import BankAccount
             
             # Fetch real data for context
             account = BankAccount.objects.filter(user=request.user).first()
@@ -102,6 +99,10 @@ def classify_voice_intent(request):
                 "bank_data": {"balance": float(account.balance) if account else 0},
                 "intent": "BANKING" if result['action'] == 'banking' else "STATUS"
             }
+            
+            # Add product_id if mentioned or contextually provided
+            if product_id:
+                state["visual_ids"] = [product_id] # We use visual_ids as a general ID transport for now or add a new field
             
             # Run graph to get an intelligent, data-backed explanation
             graph_result = graph.invoke(state)
