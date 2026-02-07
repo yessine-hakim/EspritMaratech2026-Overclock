@@ -29,3 +29,22 @@ class Transaction(models.Model):
 
     def __str__(self):
         return f"{self.transaction_type}: {self.amount} TND ({self.timestamp})"
+
+class Order(models.Model):
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='orders')
+    transaction = models.OneToOneField(Transaction, on_delete=models.CASCADE, related_name='order')
+    total_amount = models.DecimalField(max_digits=12, decimal_places=3)
+    status = models.CharField(max_length=20, default='COMPLETED')
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"Order {self.id} for {self.user.email}"
+
+class OrderItem(models.Model):
+    order = models.ForeignKey(Order, on_delete=models.CASCADE, related_name='items')
+    product = models.ForeignKey('products.Product', on_delete=models.CASCADE)
+    quantity = models.PositiveIntegerField()
+    price_at_purchase = models.DecimalField(max_digits=12, decimal_places=3)
+
+    def __str__(self):
+        return f"{self.quantity} x {self.product.title} (Order {self.order.id})"

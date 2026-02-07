@@ -7,7 +7,7 @@ import { Link } from 'react-router-dom';
 const Chatbot = () => {
     const [isOpen, setIsOpen] = useState(false);
     const [messages, setMessages] = useState([
-        { type: 'bot', content: "Hi! I'm your AI shopping assistant. I can help you find products that fit your budget. Try asking 'Find me a cheap laptop' or upload an image!" }
+        { type: 'bot', content: "Hi! I'm your AI shopping assistant. I can help you find products that fit your budget." }
     ]);
     const [input, setInput] = useState('');
     const [isListening, setIsListening] = useState(false);
@@ -200,7 +200,7 @@ const Chatbot = () => {
                                                                 />
                                                             </div>
                                                             <p className="text-xs font-bold truncate text-primary mb-1">{prod.title || 'Untitled Product'}</p>
-                                                            <p className="text-xs text-accent font-bold">${prod.price || 'N/A'}</p>
+                                                            <p className="text-xs text-accent font-bold">{prod.price || 'N/A'} TND</p>
                                                         </Link>
                                                     );
                                                 })}

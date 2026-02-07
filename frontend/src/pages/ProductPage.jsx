@@ -129,7 +129,7 @@ const ProductPage = () => {
                     </div>
 
                     <div className="mb-8 pb-8 border-b border-gray-light">
-                        <span className="text-4xl font-bold text-primary block mb-2" aria-label={`Price: ${product.price}`}>${product.price}</span>
+                        <span className="text-4xl font-bold text-primary block mb-2" aria-label={`Price: ${product.price} TND`}>{product.price} TND</span>
 
                         <div className="inline-flex items-center gap-3 bg-highlight/10 text-primary px-4 py-2 rounded-xl mt-2 border border-highlight/20" aria-label="Budget-Fit Verified">
                             <div className="w-6 h-6 rounded-full bg-highlight text-primary flex items-center justify-center" aria-hidden="true">
@@ -161,7 +161,7 @@ const ProductPage = () => {
                     <div className="bg-gray-50 rounded-xl p-6 space-y-3" role="complementary" aria-label="Shipping and returns information">
                         <div className="flex items-center gap-3 text-sm text-gray-600">
                             <FaTruck className="text-accent text-lg" aria-hidden="true" />
-                            <span><strong>Free Shipping</strong> on orders over $50</span>
+                            <span><strong>Free Shipping</strong> on orders over 50 TND</span>
                         </div>
                         <div className="flex items-center gap-3 text-sm text-gray-600">
                             <FaUndo className="text-accent text-lg" aria-hidden="true" />

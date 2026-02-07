@@ -1,57 +1,114 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useCart } from '../context/CartContext';
-import { FaTrash, FaPlus, FaMinus } from 'react-icons/fa';
+import { FaTrash, FaPlus, FaMinus, FaCheckCircle, FaExclamationCircle, FaSpinner } from 'react-icons/fa';
+import { useNavigate } from 'react-router-dom';
 
 const CartPage = () => {
-    const { cart, updateItem } = useCart();
+    const { cart, updateItem, checkout } = useCart();
+    const [isProcessing, setIsProcessing] = useState(false);
+    const [error, setError] = useState('');
+    const [success, setSuccess] = useState('');
+    const navigate = useNavigate();
+
+    const handleCheckout = async () => {
+        setIsProcessing(true);
+        setError('');
+        try {
+            const result = await checkout();
+            setSuccess(`Payment Successful! Order #${result.order_id} has been created.`);
+            setTimeout(() => navigate('/banking'), 3000);
+        } catch (err) {
+            setError(err.response?.data?.error || "An error occurred during checkout. Please check your wallet balance.");
+        } finally {
+            setIsProcessing(false);
+        }
+    };
 
     if (!cart || cart.items.length === 0) {
-        return <div className="text-center mt-10 text-xl text-gray-600">Your cart is empty</div>;
+        return (
+            <div className="flex flex-col items-center justify-center py-20 animate-fadeIn">
+                <div className="bg-gray-50 p-8 rounded-full mb-6">
+                    <FaSpinner size={48} className="text-gray-200" />
+                </div>
+                <h1 className="text-2xl font-bold text-gray-400">Your cart is empty</h1>
+                <button
+                    onClick={() => navigate('/')}
+                    className="mt-6 text-accent font-bold hover:underline"
+                >
+                    Continue Shopping
+                </button>
+            </div>
+        );
     }
 
     return (
-        <div className="max-w-4xl mx-auto mt-10 p-6 bg-white shadow rounded-lg">
-            <h1 className="text-2xl font-bold mb-6 border-b pb-4">Shopping Cart ({cart.total_items} items)</h1>
+        <div className="max-w-4xl mx-auto mt-10 p-6 space-y-8 animate-fadeIn">
+            <header className="flex justify-between items-end border-b pb-6">
+                <h1 className="text-3xl font-black text-primary">Shopping Cart</h1>
+                <span className="bg-accent/10 text-accent px-4 py-1 rounded-full text-sm font-bold">
+                    {cart.total_items} {cart.total_items === 1 ? 'Item' : 'Items'}
+                </span>
+            </header>
+
+            {error && (
+                <div className="bg-rose-50 border border-rose-100 p-4 rounded-2xl flex items-center gap-3 text-rose-600 font-bold animate-shake">
+                    <FaExclamationCircle />
+                    {error}
+                </div>
+            )}
+
+            {success && (
+                <div className="bg-emerald-50 border border-emerald-100 p-6 rounded-2xl flex flex-col items-center gap-3 text-emerald-600 font-bold animate-bounceIn">
+                    <FaCheckCircle size={32} />
+                    <p className="text-xl">{success}</p>
+                    <p className="text-sm font-normal opacity-70">Redirecting to your wallet...</p>
+                </div>
+            )}
 
             <div className="space-y-6">
-                {cart.items.map(item => (
-                    <div key={item.id} className="flex justify-between items-center border-b pb-4" role="listitem">
-                        <div className="flex items-center space-x-4">
-                            <img
-                                src={item.product.image_url || "https://via.placeholder.com/80"}
-                                alt={item.product.title}
-                                className="w-20 h-20 object-contain rounded"
-                            />
+                {!success && cart.items.map(item => (
+                    <div key={item.id} className="group bg-white p-4 rounded-2xl border border-gray-100 hover:border-accent/20 transition-all flex justify-between items-center shadow-sm hover:shadow-md">
+                        <div className="flex items-center space-x-6">
+                            <div className="w-24 h-24 bg-gray-50 rounded-xl p-2 flex items-center justify-center overflow-hidden">
+                                <img
+                                    src={item.product.image || "https://via.placeholder.com/80"}
+                                    alt={item.product.title}
+                                    className="max-w-full max-h-full object-contain group-hover:scale-110 transition-transform"
+                                />
+                            </div>
                             <div>
-                                <h3 className="font-semibold text-lg">{item.product.title}</h3>
-                                <p className="text-gray-500">{item.product.price}</p>
+                                <h3 className="font-bold text-lg text-primary leading-tight mb-1">{item.product.title}</h3>
+                                <p className="text-accent font-black">{item.product.price}</p>
                             </div>
                         </div>
 
-                        <div className="flex items-center space-x-6">
-                            <div className="flex items-center border rounded">
+                        <div className="flex items-center space-x-8">
+                            <div className="flex items-center bg-gray-50 rounded-xl p-1 border border-gray-100">
                                 <button
                                     onClick={() => updateItem(item.id, 'decrease')}
-                                    className="p-2 hover:bg-gray-100 focus-visible:bg-accent focus-visible:text-white outline-none rounded-l transition-colors"
+                                    disabled={isProcessing}
+                                    className="w-10 h-10 flex items-center justify-center hover:bg-white hover:text-rose-500 rounded-lg transition-all text-gray-400"
                                     aria-label="Decrease quantity"
-                                    title="Decrease (Enter/Space)"
                                 ><FaMinus size={12} /></button>
-                                <span className="px-4 font-medium border-x" aria-current="true">{item.quantity}</span>
+                                <span className="w-12 text-center font-black text-primary">{item.quantity}</span>
                                 <button
                                     onClick={() => updateItem(item.id, 'increase')}
-                                    className="p-2 hover:bg-gray-100 focus-visible:bg-accent focus-visible:text-white outline-none rounded-r transition-colors"
+                                    disabled={isProcessing}
+                                    className="w-10 h-10 flex items-center justify-center hover:bg-white hover:text-accent rounded-lg transition-all text-gray-400"
                                     aria-label="Increase quantity"
-                                    title="Increase (Enter/Space)"
                                 ><FaPlus size={12} /></button>
                             </div>
-                            <div className="text-right w-24">
-                                <p className="font-bold text-lg text-primary">${item.total_price.toFixed(2)}</p>
+
+                            <div className="text-right w-28">
+                                <p className="text-xs text-gray-400 uppercase font-bold tracking-tighter">Subtotal</p>
+                                <p className="font-black text-xl text-primary">{item.total_price.toFixed(2)} <span className="text-xs font-normal">TND</span></p>
                             </div>
+
                             <button
                                 onClick={() => updateItem(item.id, 'remove')}
-                                className="text-red-500 hover:text-red-700 p-2 rounded-full focus-visible:ring-2 focus-visible:ring-red-500 outline-none transition-all"
+                                disabled={isProcessing}
+                                className="text-gray-300 hover:text-rose-500 p-2 rounded-xl hover:bg-rose-50 transition-all focus:outline-none focus:ring-2 focus:ring-rose-500"
                                 aria-label="Remove item"
-                                title="Remove (Enter/Space)"
                             >
                                 <FaTrash />
                             </button>
@@ -60,14 +117,28 @@ const CartPage = () => {
                 ))}
             </div>
 
-            <div className="mt-8 flex justify-between items-center bg-gray-50 p-6 rounded-xl">
-                <span className="text-2xl font-semibold text-primary">Total:</span>
-                <span className="text-2xl font-bold text-accent">${cart.total_price.toFixed(2)}</span>
-            </div>
-
-            <button className="w-full bg-accent text-white text-xl py-4 rounded-xl mt-8 hover:bg-[#0e5a56] focus-visible:ring-4 focus-visible:ring-accent/30 outline-none font-bold transition-all shadow-lg hover:shadow-xl">
-                Proceed to Checkout
-            </button>
+            {!success && (
+                <div className="bg-primary p-8 rounded-3xl text-white shadow-xl space-y-6">
+                    <div className="flex justify-between items-center border-b border-white/10 pb-4">
+                        <span className="text-xl opacity-70">Total Amount</span>
+                        <span className="text-4xl font-black">{cart.total_price.toFixed(2)} <span className="text-xl font-normal opacity-50">TND</span></span>
+                    </div>
+                    <button
+                        onClick={handleCheckout}
+                        disabled={isProcessing}
+                        className="w-full bg-accent hover:bg-[#0e5a56] py-5 rounded-2xl font-black text-2xl transition-all shadow-lg hover:shadow-accent/40 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-3"
+                    >
+                        {isProcessing ? (
+                            <>
+                                <FaSpinner className="animate-spin" /> Verifying Vault...
+                            </>
+                        ) : (
+                            'Pay Now via Wallet'
+                        )}
+                    </button>
+                    <p className="text-center text-[10px] uppercase tracking-widest opacity-40">Secure Encryption Active</p>
+                </div>
+            )}
         </div>
     );
 };

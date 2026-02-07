@@ -48,8 +48,20 @@ export const CartProvider = ({ children }) => {
         }
     };
 
+    const checkout = async () => {
+        try {
+            const response = await api.post('/api/banking/checkout/');
+            await fetchCart();
+            speak("Your order has been placed successfully. Payment was processed from your wallet.");
+            return response.data;
+        } catch (error) {
+            console.error("Checkout failed", error);
+            throw error;
+        }
+    };
+
     return (
-        <CartContext.Provider value={{ cart, addToCart, updateItem, fetchCart }}>
+        <CartContext.Provider value={{ cart, addToCart, updateItem, fetchCart, checkout }}>
             {children}
         </CartContext.Provider>
     );

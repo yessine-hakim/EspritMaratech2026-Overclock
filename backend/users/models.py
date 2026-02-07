@@ -20,7 +20,7 @@ class User(AbstractUser):
         max_digits=12, decimal_places=2, null=True, blank=True
     )
 
-    currency = models.CharField(max_length=3, default="USD")
+    currency = models.CharField(max_length=3, default="TND")
 
     # Payment preferences
     PAYMENT_CHOICES = [

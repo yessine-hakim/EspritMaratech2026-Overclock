@@ -34,8 +34,12 @@ class CartItem(models.Model):
     @property
     def total_price(self):
         # Handle price cleaning if necessary (product.price is CharField currently)
+        import re
         try:
-            price = float(str(self.product.price).replace('$', '').replace(',', ''))
+            # Extract only digits and decimal point
+            price_str = str(self.product.price)
+            numeric_part = re.sub(r'[^\d.]', '', price_str)
+            price = float(numeric_part) if numeric_part else 0
         except (ValueError, TypeError):
             price = 0
         return price * self.quantity

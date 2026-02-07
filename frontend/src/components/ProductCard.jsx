@@ -53,7 +53,7 @@ const ProductCard = ({ product }) => {
 
                     <div className="mt-auto flex items-center justify-between">
                         <div>
-                            <span className="block text-2xl font-bold text-accent" aria-label={`Price: ${product.price}`}>${product.price}</span>
+                            <span className="block text-2xl font-bold text-accent" aria-label={`Price: ${product.price} TND`}>{product.price} TND</span>
                             {product.rating > 0 && (
                                 <div className="flex items-center text-xs text-yellow-500 mt-1" aria-label={`Rating: ${product.rating} stars`}>
                                     <FaStar className="mr-1" aria-hidden="true" />
