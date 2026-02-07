@@ -10,6 +10,8 @@ class VoiceIO {
         this.isListening = false;
         this.onTranscriptCallback = null;
         this.onErrorCallback = null;
+        this.minConfidence = 0.5; // Confidence threshold (0.0 - 1.0)
+        this.minTranscriptLength = 2; // Minimum characters
     }
 
     /**
@@ -29,24 +31,99 @@ class VoiceIO {
 
         this.recognition = new window.webkitSpeechRecognition();
         this.recognition.continuous = true;
-        this.recognition.interimResults = false;
+        this.recognition.interimResults = true; // Enable partial results for better UX
+        this.recognition.maxAlternatives = 3; // Get multiple interpretations
         this.recognition.lang = 'en-US';
 
         this.recognition.onresult = (event) => {
-            const transcript = event.results[event.results.length - 1][0].transcript;
-            console.log('[VoiceIO] Transcript:', transcript);
+            const result = event.results[event.results.length - 1];
+
+            // Only process final results (ignore interim)
+            if (!result.isFinal) {
+                return;
+            }
+
+            const transcript = result[0].transcript;
+            const confidence = result[0].confidence;
+
+            console.log('[VoiceIO] Raw transcript:', transcript, 'Confidence:', confidence);
+
+            // CRITICAL: Validate transcript before processing
+            const cleaned = transcript.trim();
+
+            // Filter out empty or too-short transcripts
+            if (!cleaned || cleaned.length < this.minTranscriptLength) {
+                console.warn('[VoiceIO] Transcript too short, ignoring:', transcript);
+                return;
+            }
+
+            // Check confidence threshold
+            if (confidence < this.minConfidence) {
+                console.warn('[VoiceIO] Low confidence:', confidence, 'for:', cleaned);
+                this.askForClarification("I'm not sure I heard that correctly. Please repeat.");
+                return;
+            }
+
+            // Valid transcript - send to callback
+            console.log('[VoiceIO] Valid transcript:', cleaned, 'Confidence:', confidence);
             if (this.onTranscriptCallback) {
-                this.onTranscriptCallback(transcript.trim());
+                this.onTranscriptCallback(cleaned);
             }
         };
 
         this.recognition.onerror = (event) => {
             console.error('[VoiceIO] Recognition error:', event.error);
-            if (event.error === 'no-speech') {
-                // Restart listening
-                this.startListening();
-            } else if (this.onErrorCallback) {
-                this.onErrorCallback(new Error(event.error));
+
+            // Handle different error types with appropriate recovery
+            switch (event.error) {
+                case 'no-speech':
+                    // Silent error - just restart listening
+                    console.log('[VoiceIO] No speech detected, continuing to listen...');
+                    if (this.isListening) {
+                        setTimeout(() => {
+                            try {
+                                this.recognition.start();
+                            } catch (e) {
+                                // Already started, ignore
+                            }
+                        }, 100);
+                    }
+                    break;
+
+                case 'audio-capture':
+                    this.speak("I can't access your microphone. Please check your browser permissions.");
+                    if (this.onErrorCallback) {
+                        this.onErrorCallback(new Error('Microphone access denied'));
+                    }
+                    this.isListening = false;
+                    break;
+
+                case 'network':
+                    this.speak("Network error. Retrying in a moment...");
+                    if (this.isListening) {
+                        setTimeout(() => this.startListening(), 1000);
+                    }
+                    break;
+
+                case 'not-allowed':
+                case 'service-not-allowed':
+                    this.speak("Microphone permission denied. Please enable it in your browser settings.");
+                    if (this.onErrorCallback) {
+                        this.onErrorCallback(new Error('Permission denied'));
+                    }
+                    this.isListening = false;
+                    break;
+
+                case 'aborted':
+                    // User stopped - don't restart
+                    console.log('[VoiceIO] Recognition aborted');
+                    break;
+
+                default:
+                    console.error('[VoiceIO] Unhandled error:', event.error);
+                    if (this.onErrorCallback) {
+                        this.onErrorCallback(new Error(event.error));
+                    }
             }
         };
 
@@ -54,7 +131,12 @@ class VoiceIO {
             // Auto-restart if still supposed to be listening
             if (this.isListening) {
                 console.log('[VoiceIO] Recognition ended, restarting...');
-                this.recognition.start();
+                try {
+                    this.recognition.start();
+                } catch (error) {
+                    // Already started or other error
+                    console.warn('[VoiceIO] Could not restart:', error.message);
+                }
             }
         };
 
@@ -82,6 +164,11 @@ class VoiceIO {
             return true;
         } catch (error) {
             console.error('[VoiceIO] Failed to start listening:', error);
+            // If already started, mark as listening anyway
+            if (error.message.includes('already started')) {
+                this.isListening = true;
+                return true;
+            }
             return false;
         }
     }
@@ -95,8 +182,12 @@ class VoiceIO {
         }
 
         this.isListening = false;
-        this.recognition.stop();
-        console.log('[VoiceIO] Stopped listening');
+        try {
+            this.recognition.stop();
+            console.log('[VoiceIO] Stopped listening');
+        } catch (error) {
+            console.warn('[VoiceIO] Error stopping:', error);
+        }
     }
 
     /**
@@ -149,6 +240,15 @@ class VoiceIO {
      */
     getIsListening() {
         return this.isListening;
+    }
+
+    /**
+     * Set confidence threshold
+     * @param {number} threshold - Confidence threshold (0.0 - 1.0)
+     */
+    setConfidenceThreshold(threshold) {
+        this.minConfidence = Math.max(0, Math.min(1, threshold));
+        console.log('[VoiceIO] Confidence threshold set to:', this.minConfidence);
     }
 
     /**

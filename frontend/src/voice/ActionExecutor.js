@@ -47,6 +47,9 @@ class ActionExecutor {
                 case 'status_check':
                     return await this.handleStatusCheck(target, params);
 
+                case 'help':
+                    return await this.handleHelp(target);
+
                 case 'confirm':
                     return await this.handleConfirm();
 
@@ -240,6 +243,30 @@ class ActionExecutor {
             default:
                 return { success: false, message: `Unknown status check: ${target}` };
         }
+    }
+
+    /**
+     * Handle help requests
+     */
+    async handleHelp(target) {
+        const helpText = `
+            Voice commands available: 
+            Say search for products to find items. 
+            Say add to cart to add products. 
+            Say view cart to see your cart. 
+            Say checkout to complete your purchase. 
+            Say check balance to see your account balance. 
+            Say log out to sign out. 
+            Say go to home, cart, banking, or profile to navigate. 
+            You can also ask me questions about products or your budget.
+        `.trim().replace(/\s+/g, ' ');
+
+        await this.voiceIO.speak(helpText);
+
+        return {
+            success: true,
+            message: helpText
+        };
     }
 
     /**

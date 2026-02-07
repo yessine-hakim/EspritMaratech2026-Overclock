@@ -14,6 +14,7 @@ const Chatbot = () => {
     const [input, setInput] = useState('');
     const [isListening, setIsListening] = useState(false);
     const [isLoading, setIsLoading] = useState(false);
+    const [selectedImage, setSelectedImage] = useState(null); // FIXED: Missing state declaration
     const messagesEndRef = useRef(null);
     const { user } = useAuth();
     const fileInputRef = useRef(null);

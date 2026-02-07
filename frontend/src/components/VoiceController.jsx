@@ -44,13 +44,27 @@ const VoiceController = () => {
         actionExecutorRef.current = actionExecutor;
 
         // Initialize voice I/O
-        voiceIO.initialize(
+        const initialized = voiceIO.initialize(
             (transcript) => handleVoiceInput(transcript),
             (err) => {
                 console.error('[VoiceController] Voice error:', err);
                 setError(err.message);
             }
         );
+
+        // AUTO-START voice for accessibility (after small delay)
+        if (initialized) {
+            setTimeout(() => {
+                const started = voiceIO.startListening();
+                if (started) {
+                    setIsListening(true);
+                    // Welcome message
+                    voiceIO.speak("Voice assistant ready. Say help for available commands, or start speaking your request.");
+                } else {
+                    console.warn('[VoiceController] Failed to auto-start voice');
+                }
+            }, 1000); // 1 second delay to ensure full initialization
+        }
 
         // Cleanup on unmount
         return () => {
@@ -67,6 +81,7 @@ const VoiceController = () => {
         console.log('[VoiceController] Voice input:', transcript);
         setLastCommand(transcript);
         setIsProcessing(true);
+        setError(null); // Clear previous errors
 
         const voiceIO = voiceIORef.current;
         const conversationState = conversationStateRef.current;
@@ -94,6 +109,7 @@ const VoiceController = () => {
             }
 
             // Parse intent via backend
+            console.log('[VoiceController] Sending to backend:', transcript);
             const intentResponse = await api.post('/api/recommendations/voice-intent/', {
                 transcript
             });
@@ -101,13 +117,21 @@ const VoiceController = () => {
             const intent = intentResponse.data;
             console.log('[VoiceController] Intent parsed:', intent);
 
-            // Execute action
+            // Execute action and wait for completion
+            console.log('[VoiceController] Executing action...');
             const result = await actionExecutor.execute(intent);
-
             console.log('[VoiceController] Action result:', result);
 
-            // Speak response
-            const responseText = intent.response || result.message || 'Done.';
+            // ALWAYS provide vocal feedback
+            let responseText = intent.response || result.message || 'Done.';
+
+            // Enhanced feedback for navigation
+            if (intent.action === 'navigate' && result.success) {
+                responseText = `Navigating to ${intent.target} page.`;
+            }
+
+            // Speak the response
+            console.log('[VoiceController] Speaking response:', responseText);
             await voiceIO.speak(responseText);
 
             // Add to conversation history
@@ -119,7 +143,20 @@ const VoiceController = () => {
         } catch (error) {
             console.error('[VoiceController] Processing error:', error);
 
-            const errorMessage = error.response?.data?.error || 'Sorry, I encountered an error.';
+            // Comprehensive error messaging
+            let errorMessage = 'Sorry, I encountered an error.';
+
+            if (error.response?.data?.response) {
+                errorMessage = error.response.data.response;
+            } else if (error.response?.data?.error) {
+                errorMessage = error.response.data.error;
+            } else if (error.message) {
+                errorMessage = `Error: ${error.message}`;
+            }
+
+            console.error('[VoiceController] Error message:', errorMessage);
+
+            // ALWAYS speak errors
             await voiceIORef.current.speak(errorMessage);
             setError(errorMessage);
         } finally {
@@ -159,8 +196,8 @@ const VoiceController = () => {
                 onClick={toggleListening}
                 disabled={isProcessing}
                 className={`p-5 rounded-full shadow-2xl transition-all border-4 flex items-center justify-center cursor-pointer hover:scale-110 ${isListening
-                        ? 'bg-accent border-accent/20 text-white animate-pulse'
-                        : 'bg-gray-300 border-gray-400 text-gray-600 hover:bg-gray-400'
+                    ? 'bg-accent border-accent/20 text-white animate-pulse'
+                    : 'bg-gray-300 border-gray-400 text-gray-600 hover:bg-gray-400'
                     }`}
                 title={isListening ? 'Voice assistant listening' : 'Click to start voice assistant'}
                 aria-label={isListening ? 'Stop listening' : 'Start listening'}
