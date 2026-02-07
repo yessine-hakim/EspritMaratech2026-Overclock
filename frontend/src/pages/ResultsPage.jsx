@@ -15,6 +15,8 @@ const ResultsPage = () => {
     const [explanation, setExplanation] = useState('');
     const [categories, setCategories] = useState([]);
     const [selectedCategories, setSelectedCategories] = useState(categoryId ? [categoryId] : []);
+    const [totalPages, setTotalPages] = useState(1);
+    const currentPage = parseInt(searchParams.get('page') || '1', 10);
 
     // Fetch categories for sidebar
     useEffect(() => {
@@ -46,6 +48,7 @@ const ResultsPage = () => {
                 const params = new URLSearchParams(location.search);
                 const res = await api.get(`/api/products/api/results/?${params.toString()}`);
                 setProducts(res.data.results);
+                setTotalPages(res.data.pages);
                 setExplanation(res.data.explanation);
 
                 // If backend returns facets, update categories here
@@ -74,6 +77,14 @@ const ResultsPage = () => {
         newParams.delete('category');
         newCats.forEach(c => newParams.append('category', c));
         setSearchParams(newParams);
+    };
+
+    const handlePageChange = (newPage) => {
+        if (newPage < 1 || newPage > totalPages) return;
+        const newParams = new URLSearchParams(searchParams);
+        newParams.set('page', newPage);
+        setSearchParams(newParams);
+        window.scrollTo({ top: 0, behavior: 'smooth' });
     };
 
     return (
@@ -178,12 +189,28 @@ const ResultsPage = () => {
                     )}
                 </div>
 
-                {/* Pagination - Placeholder */}
-                <div className="mt-12 flex justify-center gap-4 pt-8 border-t border-gray-light">
-                    <button className="px-6 py-2 border border-gray-300 rounded-lg bg-white text-gray-600 hover:bg-gray-50 disabled:opacity-50" disabled>Previous</button>
-                    <span className="flex items-center font-semibold text-primary">Page 1 of 1</span>
-                    <button className="px-6 py-2 bg-accent text-white rounded-lg hover:bg-[#0e5a56] disabled:bg-gray-300">Next</button>
-                </div>
+                {/* Pagination */}
+                {totalPages > 1 && (
+                    <div className="mt-12 flex justify-center gap-4 pt-8 border-t border-gray-light">
+                        <button
+                            onClick={() => handlePageChange(currentPage - 1)}
+                            disabled={currentPage === 1}
+                            className="px-6 py-2 border border-gray-300 rounded-lg bg-white text-gray-600 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                        >
+                            Previous
+                        </button>
+                        <span className="flex items-center font-semibold text-primary">
+                            Page {currentPage} of {totalPages}
+                        </span>
+                        <button
+                            onClick={() => handlePageChange(currentPage + 1)}
+                            disabled={currentPage === totalPages}
+                            className="px-6 py-2 bg-accent text-white rounded-lg hover:bg-[#0e5a56] disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors"
+                        >
+                            Next
+                        </button>
+                    </div>
+                )}
             </section>
         </main>
     );

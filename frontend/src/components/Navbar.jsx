@@ -114,6 +114,13 @@ const Navbar = () => {
                     </Link>
                 </div>
 
+                {/* Main Menu */}
+                <div className="hidden md:flex items-center gap-6">
+                    <Link to="/results" className="font-semibold text-gray-600 hover:text-accent transition-colors">
+                        Browse Products
+                    </Link>
+                </div>
+
                 {/* Search Section */}
                 <form onSubmit={handleSearch} className="flex-1 max-w-lg flex items-center gap-2" role="search" aria-label="Product Search">
                     <div className="relative flex-1 flex items-center">
