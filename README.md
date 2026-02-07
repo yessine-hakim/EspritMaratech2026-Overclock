@@ -73,8 +73,8 @@ cd EspritMaratech2026-Overclock
 **Windows:**
 ```bash
 cd backend
-python -m venv env
-.\env\Scripts\activate
+python -m venv venv
+venv\Scripts\activate
 pip install -r requirements.txt
 python manage.py migrate
 python manage.py runserver
@@ -83,8 +83,8 @@ python manage.py runserver
 **macOS/Linux:**
 ```bash
 cd backend
-python3 -m venv env
-source env/bin/activate
+python3 -m venv venv
+source venv/bin/activate
 pip install -r requirements.txt
 python manage.py migrate
 python manage.py runserver
