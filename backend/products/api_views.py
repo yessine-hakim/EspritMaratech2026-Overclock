@@ -203,13 +203,11 @@ class ResultsAPIView(views.APIView):
                     if request.user.is_authenticated:
                         user_profile = {
                             "monthly_budget": float(request.user.monthly_budget) if hasattr(request.user, 'monthly_budget') else 1000.0,
-                            "spending_habits": request.user.payment_preferences if hasattr(request.user, 'payment_preferences') else 'card'
                         }
                     else:
-                        # Default profile for unauthenticated users - budget will be inferred from query
+                        # Default profile for unauthenticated users
                         user_profile = {
                             "monthly_budget": 1000.0,
-                            "spending_habits": 'card'
                         }
                     
                     app = create_recommendation_graph()

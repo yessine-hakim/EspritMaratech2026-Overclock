@@ -5,7 +5,7 @@ import uuid
 class BankAccount(models.Model):
     user = models.OneToOneField(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='bank_account')
     iban = models.CharField(max_length=36, unique=True, default=uuid.uuid4)
-    balance = models.DecimalField(max_digits=12, decimal_places=3, default=0.000) # TND has 3 decimal places
+    balance = models.DecimalField(max_digits=12, decimal_places=3, default=600.000) # TND has 3 decimal places
     currency = models.CharField(max_length=3, default='TND')
     created_at = models.DateTimeField(auto_now_add=True)
 

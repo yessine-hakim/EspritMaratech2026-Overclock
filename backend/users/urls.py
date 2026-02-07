@@ -8,4 +8,5 @@ urlpatterns = [
     path('me/', views.CheckSessionView.as_view(), name='api_me'),
     path('csrf/', views.GetCSRFToken.as_view(), name='api_csrf'),
     path('transcribe/', views.TranscribeAPIView.as_view(), name='api_transcribe'),
+    path('update/', views.ProfileUpdateAPIView.as_view(), name='api_profile_update'),
 ]

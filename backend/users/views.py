@@ -16,6 +16,8 @@ class RegisterAPIView(generics.CreateAPIView):
 
     def perform_create(self, serializer):
         user = serializer.save()
+        from banking.models import BankAccount
+        BankAccount.objects.get_or_create(user=user)
         login(self.request, user)
 
 class LoginAPIView(views.APIView):
@@ -40,6 +42,8 @@ class CheckSessionView(views.APIView):
 
     def get(self, request):
         if request.user.is_authenticated:
+            from banking.models import BankAccount
+            BankAccount.objects.get_or_create(user=request.user)
             return Response(UserSerializer(request.user).data)
         return Response({'isAuthenticated': False, 'details': 'User is Anonymous'}, status=status.HTTP_401_UNAUTHORIZED)
 
@@ -68,3 +72,9 @@ class TranscribeAPIView(views.APIView):
             print(f"Transcription error: {e}")
             return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
+class ProfileUpdateAPIView(generics.UpdateAPIView):
+    serializer_class = UserSerializer
+    permission_classes = (permissions.IsAuthenticated,)
+
+    def get_object(self):
+        return self.request.user

@@ -12,10 +12,6 @@ class BalanceView(generics.RetrieveAPIView):
     def get_object(self):
         # Automatically create account if not exists (for prototype simplicity)
         account, created = BankAccount.objects.get_or_create(user=self.request.user)
-        if created:
-            # Seed initial balance for demo
-            account.balance = 200.000
-            account.save()
         return account
 
 class TransferView(views.APIView):

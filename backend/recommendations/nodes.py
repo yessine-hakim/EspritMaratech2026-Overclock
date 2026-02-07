@@ -30,6 +30,14 @@ def get_retriever():
 
 def intent_classification_node(state: RecommendationState) -> dict[str, Any]:
     """Determine user intent: SHOPPING, BANKING, or NAVIGATION."""
+    # Force SHOPPING if an image was provided
+    if state.get("visual_ids"):
+        print("DEBUG: Visual IDs detected, forcing intent to SHOPPING")
+        return {
+            "intent": "SHOPPING",
+            "bank_data": {}
+        }
+        
     chain = get_intent_classification_chain()
     result = chain.invoke({"query": state["query"]})
     return {
@@ -78,9 +86,24 @@ def safety_agent_node(state: RecommendationState) -> dict[str, Any]:
 
 def budget_profiling_node(state: RecommendationState) -> dict[str, Any]:
     """Infer budget from query and profile."""
+    query = state["query"]
+    
+    # If no text query but we have visual search, use a relaxed budget to avoid filtering
+    if not query.strip() and state.get("visual_ids"):
+        print("DEBUG: Empty query with visual search, using relaxed budget")
+        return {
+            "inferred_budget": {
+                "min_budget": 0,
+                "target_budget": 1000,
+                "max_budget": 10000, # High limit for visual search
+                "intended_category": "visual_search",
+                "reasoning": "Relaxed budget for visual search without text constraints."
+            }
+        }
+        
     chain = get_budget_profiling_chain()
     result = chain.invoke({
-        "query": state["query"],
+        "query": query,
         "user_profile": state["user_profile"]
     })
     return {"inferred_budget": result}
@@ -162,22 +185,38 @@ def retrieval_node(state: RecommendationState) -> dict[str, Any]:
                 traceback.print_exc()
             
     # 2. Incorporate Visual Results (if image was uploaded)
+    print(f"DEBUG: Retrieval Node - input visual_ids: {visual_ids} (Type: {type(visual_ids)})")
     if visual_ids:
-        # Fetch actual product metadata for visual IDs
-        # We use a high constant similarity score (0.9) to prioritize visual matches in hybrid
-        visual_products = Product.objects.filter(pk__in=visual_ids)
-        for p in visual_products:
-            # Check if already added by text search
-            already_added = any(item.get('id') == p.id for item in retrieved)
-            if not already_added:
-                retrieved.append({
-                    'id': p.id,
-                    'title': p.title,
-                    'price': p.price or p.selling_price,
-                    'image': p.get_first_image(),
-                    'similarity_score': 0.9, # Prioritize visual
-                    'category': p.category.name if p.category else ""
-                })
+        # Crucial: Ensure visual_ids are integers for DB query
+        try:
+            clean_visual_ids = []
+            for vid in visual_ids:
+                try:
+                    clean_visual_ids.append(int(vid))
+                except (ValueError, TypeError):
+                    print(f"  ✗ WARNING: Could not cast visual ID {vid} to int")
+            
+            print(f"DEBUG: Querying DB for {len(clean_visual_ids)} clean_visual_ids")
+            visual_products = Product.objects.filter(pk__in=clean_visual_ids)
+            print(f"DEBUG: Found {visual_products.count()} products in DB matches")
+            
+            for p in visual_products:
+                # Check if already added by text search
+                already_added = any(str(item.get('id')) == str(p.id) for item in retrieved)
+                if not already_added:
+                    retrieved.append({
+                        'id': p.id,
+                        'title': p.title,
+                        'price': p.price or p.selling_price,
+                        'image': p.get_first_image(),
+                        'similarity_score': 0.9, # Prioritize visual
+                        'category': p.category.name if p.category else ""
+                    })
+                    print(f"  ✓ Added visual product: {p.title} (ID: {p.id})")
+        except Exception as e:
+            print(f"  ✗ ERROR in visual product processing: {e}")
+            import traceback
+            traceback.print_exc()
 
     # Fallback: If no products retrieved from Qdrant, try simple text search in DB
     if not retrieved and query and query.strip():
@@ -188,7 +227,7 @@ def retrieval_node(state: RecommendationState) -> dict[str, Any]:
             keywords = query.strip().split()[:3]  # Use first 3 words
             db_products = Product.objects.filter(
                 Q(title__icontains=query) | Q(description__icontains=query) |
-                Q(title__icontains=keywords[0]) if keywords else Q()
+                Q(title__icontains=keywords[0] if keywords else "")
             )[:20]
             for p in db_products:
                 retrieved.append({
@@ -203,38 +242,41 @@ def retrieval_node(state: RecommendationState) -> dict[str, Any]:
             print(f"DB fallback found {len(retrieved)} products")
         except Exception as e:
             print(f"DB fallback failed: {e}")
-            import traceback
-            traceback.print_exc()
     
-    # If still no products and we have visual_ids, use those
+    # Final check: If still no products and we have visual_ids, use those directly as fallback
     if not retrieved and visual_ids:
-        print(f"Using visual_ids as fallback: {len(visual_ids)} IDs")
-        visual_products = Product.objects.filter(pk__in=visual_ids[:20])
-        for p in visual_products:
-            retrieved.append({
-                'id': p.id,
-                'title': p.title,
-                'price': p.price or 'N/A',
-                'image': p.get_first_image(),
-                'similarity_score': 0.9,  # High score for visual matches
-                'category': p.category.name if p.category else "",
-                'price_val': 0.0
-            })
-        print(f"Visual fallback found {len(retrieved)} products")
+        print(f"Using visual_ids as absolute fallback: {len(visual_ids)} IDs")
+        try:
+            clean_ids = [int(vid) for vid in visual_ids if str(vid).isdigit()]
+            visual_products = Product.objects.filter(pk__in=clean_ids[:20])
+            for p in visual_products:
+                retrieved.append({
+                    'id': p.id,
+                    'title': p.title,
+                    'price': p.price or 'N/A',
+                    'image': p.get_first_image(),
+                    'similarity_score': 0.9,
+                    'category': p.category.name if p.category else "",
+                    'price_val': 0.0
+                })
+            print(f"Visual absolute fallback found {len(retrieved)} products")
+        except Exception as e:
+            print(f"Absolute fallback failed: {e}")
     
     # Format all results (ensure price_val exists)
     for product in retrieved:
         try:
             price_raw = product.get('price')
             if isinstance(price_raw, str):
-                 clean_price = price_raw.replace('$', '').replace('€', '').replace(',', '').strip()
+                 # Clean price string
+                 clean_price = price_raw.replace('$', '').replace('€', '').replace(',', '').replace('TND', '').strip()
                  product['price_val'] = float(clean_price.split(' ')[0])
             else:
                  product['price_val'] = float(price_raw or 0)
         except Exception:
             product['price_val'] = 0.0
     
-    print(f"Retrieval node returning {len(retrieved)} products")
+    print(f"Retrieval node FINISHED: returning {len(retrieved)} products")
     return {"retrieved_products": retrieved}
 
 

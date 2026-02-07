@@ -44,7 +44,6 @@ def recommend(request):
                 user_obj = User.objects.get(id=user_id)
                 user_profile = {
                     "monthly_budget": float(user_obj.monthly_budget),
-                    "spending_habits": user_obj.payment_preferences,
                     "user_obj": user_obj # Pass for banking node access
                 }
                 
@@ -58,13 +57,11 @@ def recommend(request):
                 # Fallback to default profile if user fetch fails
                 user_profile = {
                     "monthly_budget": 1000.0,
-                    "spending_habits": 'card'
                 }
         else:
             # Default profile for unauthenticated users - budget will be inferred from query
             user_profile = {
                 "monthly_budget": 1000.0,
-                "spending_habits": 'card'
             }
         
         # 2. Handle Visual Context if image is provided

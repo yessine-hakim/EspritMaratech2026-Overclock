@@ -15,8 +15,7 @@ const RegisterPage = () => {
         max_single_purchase: '',
         preferred_price_range_min: '',
         preferred_price_range_max: '',
-        payment_preferences: 'card',
-        currency: 'USD'
+        currency: 'TND'
     });
     const [error, setError] = useState('');
     const errorRef = useRef(null);
@@ -197,34 +196,6 @@ const RegisterPage = () => {
                             value={formData.preferred_price_range_max}
                             onChange={handleChange}
                         />
-                    </div>
-
-                    <div>
-                        <label className="block text-sm font-semibold text-primary mb-2">Payment Preference</label>
-                        <select
-                            name="payment_preferences"
-                            className="w-full px-4 py-3 rounded-lg border border-gray-light bg-gray-50 focus:bg-white focus:outline-none focus:border-accent focus:ring-2 focus:ring-accent/10 transition-colors"
-                            value={formData.payment_preferences}
-                            onChange={handleChange}
-                        >
-                            <option value="card">Card</option>
-                            <option value="installments">Installments</option>
-                            <option value="cash">Cash</option>
-                        </select>
-                    </div>
-
-                    <div>
-                        <label className="block text-sm font-semibold text-primary mb-2">Currency</label>
-                        <select
-                            name="currency"
-                            className="w-full px-4 py-3 rounded-lg border border-gray-light bg-gray-50 focus:bg-white focus:outline-none focus:border-accent focus:ring-2 focus:ring-accent/10 transition-colors"
-                            value={formData.currency}
-                            onChange={handleChange}
-                        >
-                            <option value="USD">USD</option>
-                            <option value="EUR">EUR</option>
-                            <option value="GBP">GBP</option>
-                        </select>
                     </div>
 
                     <div className="md:col-span-2 mt-6">

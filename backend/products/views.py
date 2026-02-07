@@ -316,7 +316,6 @@ def results(request):
             
             user_profile = {
                 "monthly_budget": float(request.user.monthly_budget) if hasattr(request.user, 'monthly_budget') else 1000.0,
-                "spending_habits": request.user.payment_preferences if hasattr(request.user, 'payment_preferences') else 'card'
             }
             
             app = create_recommendation_graph()

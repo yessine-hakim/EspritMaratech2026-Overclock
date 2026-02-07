@@ -6,7 +6,12 @@ User = get_user_model()
 class UserSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
-        fields = ('id', 'email', 'first_name', 'last_name', 'monthly_budget', 'currency')
+        fields = (
+            'id', 'email', 'username', 'first_name', 'last_name', 
+            'monthly_budget', 'max_single_purchase', 
+            'preferred_price_range_min', 'preferred_price_range_max', 
+            'currency'
+        )
 
 class UserRegistrationSerializer(serializers.ModelSerializer):
     password = serializers.CharField(write_only=True)
@@ -17,7 +22,7 @@ class UserRegistrationSerializer(serializers.ModelSerializer):
             'email', 'password', 'first_name', 'last_name',
             'monthly_budget', 'max_single_purchase',
             'preferred_price_range_min', 'preferred_price_range_max',
-            'payment_preferences', 'currency'
+            'currency'
         )
 
     def create(self, validated_data):
@@ -30,8 +35,7 @@ class UserRegistrationSerializer(serializers.ModelSerializer):
             max_single_purchase=validated_data.get('max_single_purchase', 0),
             preferred_price_range_min=validated_data.get('preferred_price_range_min', 0),
             preferred_price_range_max=validated_data.get('preferred_price_range_max', 0),
-            payment_preferences=validated_data.get('payment_preferences', 'card'),
-            currency=validated_data.get('currency', 'USD'),
+            currency=validated_data.get('currency', 'TND'),
             username=validated_data['email'] # Ensure username is email as per forms.py logic
         )
         return user

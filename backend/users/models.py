@@ -22,16 +22,6 @@ class User(AbstractUser):
 
     currency = models.CharField(max_length=3, default="TND")
 
-    # Payment preferences
-    PAYMENT_CHOICES = [
-        ("card", "Card"),
-        ("installments", "Installments"),
-        ("cash", "Cash"),
-    ]
-    payment_preferences = models.CharField(
-        max_length=20, choices=PAYMENT_CHOICES, null=True, blank=True
-    )
-
     USERNAME_FIELD = "email"
     REQUIRED_FIELDS = ["username"]
 
