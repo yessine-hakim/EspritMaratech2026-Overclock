@@ -3,18 +3,53 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useCart } from '../context/CartContext';
 import { useA11y } from '../context/A11yContext';
-import { FaShoppingCart, FaUser, FaSignOutAlt, FaSearch, FaCamera, FaEye, FaTextHeight, FaUniversalAccess } from 'react-icons/fa';
+import { FaShoppingCart, FaUser, FaSignOutAlt, FaSearch, FaCamera, FaEye, FaTextHeight, FaUniversalAccess, FaMicrophone } from 'react-icons/fa';
 import AccessibilityModal from './AccessibilityModal';
 import api from '../api';
 
 const Navbar = () => {
     const { user, logout } = useAuth();
     const { cart } = useCart();
-    const { highContrast, fontSize, simplifiedMode } = useA11y();
+    const { highContrast, fontSize, simplifiedMode, speak } = useA11y();
     const navigate = useNavigate();
     const [searchTerm, setSearchTerm] = useState('');
+    const [isListening, setIsListening] = useState(false);
     const [selectedImage, setSelectedImage] = useState(null);
     const [isA11yModalOpen, setIsA11yModalOpen] = useState(false);
+
+    const toggleSearchVoice = () => {
+        if (!('webkitSpeechRecognition' in window)) {
+            alert("Speech recognition is not supported in this browser.");
+            return;
+        }
+
+        const recognition = new window.webkitSpeechRecognition();
+        recognition.continuous = false;
+        recognition.interimResults = false;
+        recognition.lang = 'en-US';
+
+        recognition.onstart = () => {
+            setIsListening(true);
+            speak("Listening for your search query...");
+        };
+        recognition.onend = () => setIsListening(false);
+
+        recognition.onresult = (event) => {
+            const transcript = event.results[0][0].transcript;
+            setSearchTerm(transcript);
+            speak(`Searching for ${transcript}`);
+            // Automatically submit search after short delay
+            setTimeout(() => {
+                navigate(`/results?q=${transcript}`);
+            }, 1000);
+        };
+
+        if (isListening) {
+            recognition.stop();
+        } else {
+            recognition.start();
+        }
+    };
 
     const handleSearch = (e) => {
         e.preventDefault();
@@ -45,6 +80,7 @@ const Navbar = () => {
 
     return (
         <header className="bg-white border-b border-gray-light sticky top-0 z-50 shadow-sm" role="banner">
+            <a href="#main-content" className="skip-link">Skip to Content</a>
             <nav className="container mx-auto px-4 py-4 flex items-center justify-between gap-8" aria-label="Main Navigation">
                 {/* Logo Section */}
                 <div className="flex flex-col min-w-[200px]">
@@ -60,23 +96,36 @@ const Navbar = () => {
                         <input
                             type="text"
                             placeholder="Search by voice, text, or image..."
-                            className="w-full py-3 px-4 border border-gray-light rounded-lg text-text bg-white focus:outline-none focus:border-accent focus:ring-2 focus:ring-accent/10 transition-colors"
+                            className="w-full py-3 px-4 pr-24 border border-gray-light rounded-lg text-text bg-white focus:outline-none focus:border-accent focus:ring-2 focus:ring-accent/10 transition-colors"
                             value={searchTerm}
                             onChange={(e) => setSearchTerm(e.target.value)}
                             aria-label="Search items"
                         />
-                        {/* Camera Icon Overlay or Button */}
-                        <label htmlFor="nav-image-upload" className="absolute right-3 text-gray-400 hover:text-accent cursor-pointer transition-colors p-1" title="Search by image">
-                            <FaCamera size={18} aria-hidden="true" />
-                            <span className="sr-only">Upload image for visual search</span>
-                        </label>
-                        <input
-                            type="file"
-                            id="nav-image-upload"
-                            accept="image/*"
-                            className="hidden"
-                            onChange={handleImageUpload}
-                        />
+                        <div className="absolute right-3 flex items-center gap-2">
+                            {/* Voice Search Button */}
+                            <button
+                                type="button"
+                                onClick={toggleSearchVoice}
+                                className={`p-1 transition-colors ${isListening ? 'text-red-500 animate-pulse' : 'text-gray-400 hover:text-accent'}`}
+                                title="Search by voice"
+                            >
+                                <FaMicrophone size={18} aria-hidden="true" />
+                                <span className="sr-only">Search by voice</span>
+                            </button>
+
+                            {/* Camera Icon Overlay or Button */}
+                            <label htmlFor="nav-image-upload" className="text-gray-400 hover:text-accent cursor-pointer transition-colors p-1" title="Search by image">
+                                <FaCamera size={18} aria-hidden="true" />
+                                <span className="sr-only">Upload image for visual search</span>
+                            </label>
+                            <input
+                                type="file"
+                                id="nav-image-upload"
+                                accept="image/*"
+                                className="hidden"
+                                onChange={handleImageUpload}
+                            />
+                        </div>
                     </div>
                     <button type="submit" className="bg-accent text-white px-6 py-3 rounded-lg font-semibold hover:bg-[#0e5a56] transition-colors">
                         Search

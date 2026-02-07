@@ -147,8 +147,9 @@ const ResultsPage = () => {
                 </div>
 
                 {loading ? (
-                    <div className="flex justify-center items-center h-64">
+                    <div className="flex justify-center items-center h-64" role="status" aria-label="Loading products">
                         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-accent"></div>
+                        <span className="sr-only">Loading...</span>
                     </div>
                 ) : products.length > 0 ? (
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3 gap-6">

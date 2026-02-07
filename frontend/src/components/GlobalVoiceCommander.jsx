@@ -1,37 +1,76 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { FaMicrophone, FaVolumeUp } from 'react-icons/fa';
+import { useA11y } from '../context/A11yContext';
+import { FaMicrophone } from 'react-icons/fa';
+import api from '../api';
 
 const GlobalVoiceCommander = () => {
     const [isListening, setIsListening] = useState(false);
     const [lastCommand, setLastCommand] = useState('');
     const navigate = useNavigate();
-    const { speak } = useA11y();
+    const {
+        speak,
+        setHighContrast,
+        setFontSize,
+        setSimplifiedMode,
+        setReadabilityMode,
+        setGrayscale,
+        setVisualAlerts,
+        setFocusMode
+    } = useA11y();
 
-    const processCommand = useCallback((text) => {
-        const command = text.toLowerCase();
-        console.log("Processing voice command:", command);
+    const processCommand = useCallback(async (text) => {
+        const transcript = text.trim();
+        if (!transcript) return;
 
-        if (command.includes("home") || command.includes("accueil")) {
-            navigate("/");
-            speak("Going to home page");
-        } else if (command.includes("cart") || command.includes("panier")) {
-            navigate("/cart");
-            speak("Opening your shopping cart");
-        } else if (command.includes("bank") || command.includes("banking") || command.includes("wallet") || command.includes("solde")) {
-            navigate("/banking");
-            speak("Opening your banking wallet");
-        } else if (command.includes("login") || command.includes("connexion")) {
-            navigate("/login");
-            speak("Going to login page");
-        } else if (command.includes("search for") || command.includes("cherche")) {
-            const query = command.split("search for")[1] || command.split("cherche")[1];
-            if (query) {
-                navigate(`/results?q=${query.trim()}`);
-                speak(`Searching for ${query}`);
+        console.log("Processing AI voice command:", transcript);
+
+        try {
+            const response = await api.post('/api/recommendations/voice-intent/', { transcript });
+            const { action, target, value, response: feedback } = response.data;
+
+            console.log("AI Intent Detected:", { action, target, value });
+
+            // 1. Handle Navigation
+            if (action === 'navigate') {
+                if (target === 'home') navigate('/');
+                else if (target === 'cart') navigate('/cart');
+                else if (target === 'banking') navigate('/banking');
+                else if (target === 'login') navigate('/login');
+                else if (target === 'profile') navigate('/profile');
             }
+
+            // 2. Handle Search
+            else if (action === 'search') {
+                navigate(`/results?q=${target}`);
+            }
+
+            // 3. Handle Accessibility
+            else if (action === 'accessibility') {
+                if (target === 'highContrast') setHighContrast(!!value);
+                else if (target === 'fontSize') setFontSize(parseInt(value) || 100);
+                else if (target === 'simplifiedMode') setSimplifiedMode(!!value);
+                else if (target === 'readabilityMode') setReadabilityMode(!!value);
+                else if (target === 'grayscale') setGrayscale(!!value);
+                else if (target === 'visualAlerts') setVisualAlerts(!!value);
+                else if (target === 'focusMode') setFocusMode(!!value);
+            }
+
+            // 4. Handle Banking (Simple feedback for now, could be extended)
+            else if (action === 'banking') {
+                if (target === 'balance') navigate('/banking');
+            }
+
+            // Always speak the AI's response
+            if (feedback) {
+                speak(feedback);
+            }
+
+        } catch (error) {
+            console.error("AI Voice Command failed", error);
+            speak("I'm sorry, I couldn't process that command. Please try again.");
         }
-    }, [navigate, speak]);
+    }, [navigate, speak, setHighContrast, setFontSize, setSimplifiedMode, setReadabilityMode, setGrayscale, setVisualAlerts, setFocusMode]);
 
     const toggleListening = () => {
         if (!('webkitSpeechRecognition' in window)) {
@@ -60,10 +99,11 @@ const GlobalVoiceCommander = () => {
         }
     };
 
-    // Shortcut: Press 'V' to toggle listening
+    // Shortcut: Press 'Ctrl+V' to toggle listening
     useEffect(() => {
         const handleKeyDown = (e) => {
             if (e.key.toLowerCase() === 'v' && e.ctrlKey) {
+                e.preventDefault();
                 toggleListening();
             }
         };
@@ -80,6 +120,7 @@ const GlobalVoiceCommander = () => {
                     : 'bg-white border-accent/20 text-accent hover:border-accent'
                     }`}
                 title="Global Voice Command (Ctrl+V)"
+                aria-label={isListening ? "Stop listening" : "Start voice command"}
             >
                 <FaMicrophone size={24} />
             </button>
@@ -89,8 +130,8 @@ const GlobalVoiceCommander = () => {
                 </div>
             )}
             {lastCommand && !isListening && (
-                <div className="bg-primary/80 backdrop-blur-sm px-3 py-1 rounded-full shadow-sm">
-                    <p className="text-[10px] text-white italic">"{lastCommand}"</p>
+                <div className="bg-primary/80 backdrop-blur-sm px-3 py-1 rounded-full shadow-sm max-w-[200px] text-center">
+                    <p className="text-[10px] text-white italic truncate" title={lastCommand}>"{lastCommand}"</p>
                 </div>
             )}
         </div>

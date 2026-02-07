@@ -51,7 +51,7 @@ const HomePage = () => {
             </section>
 
             {/* Features Section */}
-            <section className="mb-20" aria-labelledby="features-title">
+            <section className="mb-20 focus-mode-distraction" aria-labelledby="features-title">
                 <h3 id="features-title" className="text-3xl font-bold text-center text-primary mb-12">Why Pay4All?</h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
                     <FeatureCard
@@ -101,7 +101,7 @@ const HomePage = () => {
             </section>
 
             {/* CTA Section */}
-            <section className="bg-white rounded-3xl p-12 text-center shadow-lg border border-gray-100" aria-labelledby="cta-title">
+            <section className="bg-white rounded-3xl p-12 text-center shadow-lg border border-gray-100 focus-mode-distraction" aria-labelledby="cta-title">
                 <h3 id="cta-title" className="text-3xl font-bold text-primary mb-4">Ready to shop smarter?</h3>
                 <p className="text-lg text-gray-600 mb-8 max-w-2xl mx-auto">
                     Explore thousands of products with budget-aware recommendations tailored to you.

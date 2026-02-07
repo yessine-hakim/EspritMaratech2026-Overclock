@@ -38,8 +38,8 @@ function App() {
                             </div>
                             <Footer />
                             <Chatbot />
-                            {/* <GlobalVoiceCommander /> */}
-                            {/* <RouteAnnouncer /> */}
+                            <GlobalVoiceCommander />
+                            <RouteAnnouncer />
                         </div>
                     </CartProvider>
                 </AuthProvider>

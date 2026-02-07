@@ -40,6 +40,68 @@
   border-radius: 0 !important;
 }
 
+/* Accessibility: Readability Mode */
+.readability-mode {
+  line-height: 2 !important;
+  letter-spacing: 0.05em !important;
+  word-spacing: 0.2em !important;
+}
+
+.readability-mode p,
+.readability-mode li,
+.readability-mode span:not(.sr-only),
+.readability-mode section,
+.readability-mode article {
+  margin-bottom: 2rem !important;
+}
+
+/* Accessibility: Color Blind Filters */
+.protanopia-filter {
+  filter: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg"><filter id="f"><feColorMatrix type="matrix" values="0.567, 0.433, 0, 0, 0 0.558, 0.442, 0, 0, 0 0, 0.242, 0.758, 0, 0 0, 0, 0, 1, 0"/></filter></svg>#f');
+}
+
+.deuteranopia-filter {
+  filter: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg"><filter id="f"><feColorMatrix type="matrix" values="0.625, 0.375, 0, 0, 0 0.7, 0.3, 0, 0, 0 0, 0.3, 0.7, 0, 0 0, 0, 0, 1, 0"/></filter></svg>#f');
+}
+
+.grayscale-filter {
+  filter: grayscale(100%) !important;
+}
+
+/* Accessibility: Focus Mode */
+.focus-mode aside,
+.focus-mode [role="complementary"],
+.focus-mode .bg-blue-50,
+/* Smart banners */
+.focus-mode .absolute.blur-xl,
+/* Decorative blobs */
+.focus-mode .focus-mode-distraction {
+  display: none !important;
+}
+
+.focus-mode main {
+  grid-template-columns: 1fr !important;
+  max-width: 800px !important;
+  margin-left: auto !important;
+  margin-right: auto !important;
+}
+
+/* Skip Link */
+.skip-link {
+  position: absolute;
+  top: -100px;
+  left: 0;
+  background: var(--accent);
+  color: white;
+  padding: 1rem;
+  z-index: 1000;
+  transition: top 0.2s;
+}
+
+.skip-link:focus {
+  top: 0;
+}
+
 body {
   margin: 0;
   min-height: 100vh;
@@ -53,6 +115,49 @@ body {
   /* Using the accent color */
   outline-offset: 2px;
   border-radius: 4px;
+}
+
+@keyframes bounceIn {
+
+  from,
+  20%,
+  40%,
+  60%,
+  80%,
+  to {
+    animation-timing-function: cubic-bezier(0.215, 0.61, 0.355, 1);
+  }
+
+  0% {
+    opacity: 0;
+    transform: scale3d(0.3, 0.3, 0.3);
+  }
+
+  20% {
+    transform: scale3d(1.1, 1.1, 1.1);
+  }
+
+  40% {
+    transform: scale3d(0.9, 0.9, 0.9);
+  }
+
+  60% {
+    opacity: 1;
+    transform: scale3d(1.03, 1.03, 1.03);
+  }
+
+  80% {
+    transform: scale3d(0.97, 0.97, 0.97);
+  }
+
+  to {
+    opacity: 1;
+    transform: scale3d(1, 1, 1);
+  }
+}
+
+.animate-bounceIn {
+  animation: bounceIn 0.8s both;
 }
 
 @layer components {
