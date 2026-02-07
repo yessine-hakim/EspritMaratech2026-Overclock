@@ -26,7 +26,13 @@ class Command(BaseCommand):
             if not data_dir.exists():
                 self.stdout.write(self.style.ERROR(f"Data directory not found: {data_dir}"))
                 return
-            data_files = list(data_dir.glob('*.jsonl'))
+            
+            # Explicitly look for products_cleaned.jsonl first
+            cleaned_file = data_dir / 'products_cleaned.jsonl'
+            if cleaned_file.exists():
+                data_files = [cleaned_file]
+            else:
+                data_files = list(data_dir.glob('*.jsonl'))
 
         if not data_files:
             self.stdout.write(self.style.WARNING("No data files found to import."))
