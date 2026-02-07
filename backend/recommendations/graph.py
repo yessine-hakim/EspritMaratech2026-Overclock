@@ -64,9 +64,25 @@ def create_recommendation_graph():
     
     # Check results if we need alternatives
     def check_shopping_results(state):
-        if not state.get("filtered_products") and not state.get("final_recommendations"):
-            return "alternatives"
-        return "synthesis"
+        final_recommendations = state.get("final_recommendations", [])
+        filtered_products = state.get("filtered_products", [])
+        retrieved_products = state.get("retrieved_products", [])
+        
+        print(f"check_shopping_results: final_recommendations={len(final_recommendations)}, filtered={len(filtered_products)}, retrieved={len(retrieved_products)}")
+        
+        # If we already have final_recommendations, go straight to synthesis
+        if final_recommendations:
+            print("check_shopping_results: Has final_recommendations, going to synthesis")
+            return "synthesis"
+        
+        # If we have filtered or retrieved products, go to synthesis (alternatives node will handle it)
+        if filtered_products or retrieved_products:
+            print("check_shopping_results: Has products, going to synthesis")
+            return "synthesis"
+        
+        # Only go to alternatives if we have absolutely nothing
+        print("check_shopping_results: No products found, going to alternatives")
+        return "alternatives"
 
     workflow.add_conditional_edges(
         "safety_agent",

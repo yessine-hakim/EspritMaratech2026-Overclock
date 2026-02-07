@@ -40,13 +40,36 @@ const Chatbot = () => {
 
             const res = await api.post('/api/recommendations/ask/', payload);
 
+            console.log("Chatbot API response:", res.data);
+            console.log("Recommendations count:", res.data.recommendations?.length || 0);
+            if (res.data.recommendations?.length > 0) {
+                console.log("First recommendation:", res.data.recommendations[0]);
+                console.log("All recommendations:", res.data.recommendations);
+            } else {
+                console.warn("No recommendations in response!");
+            }
+
+            // Ensure recommendations is an array
+            const recommendations = Array.isArray(res.data.recommendations) 
+                ? res.data.recommendations 
+                : [];
+
             const botResponse = {
                 type: 'bot',
                 content: res.data.explanation || "Here are some recommendations based on your request.",
-                recommendations: res.data.recommendations || []
+                recommendations: recommendations
             };
 
-            setMessages(prev => [...prev, botResponse]);
+            console.log("Bot response with recommendations:", botResponse);
+            console.log("Recommendations array length:", botResponse.recommendations.length);
+            console.log("Full bot response object:", JSON.stringify(botResponse, null, 2));
+
+            setMessages(prev => {
+                const newMessages = [...prev, botResponse];
+                console.log("Updated messages array:", newMessages);
+                console.log("Last message in array:", newMessages[newMessages.length - 1]);
+                return newMessages;
+            });
 
             // Voice synthesis of the answer
             speak(botResponse.content);
@@ -79,11 +102,21 @@ const Chatbot = () => {
                 headers: { 'Content-Type': 'multipart/form-data' }
             });
 
+            console.log("Image search API response:", res.data);
+            console.log("Image search recommendations count:", res.data.recommendations?.length || 0);
+            
+            // Ensure recommendations is an array
+            const recommendations = Array.isArray(res.data.recommendations) 
+                ? res.data.recommendations 
+                : [];
+
             const botResponse = {
                 type: 'bot',
                 content: res.data.explanation || "I found these similar products for you.",
-                recommendations: res.data.recommendations || []
+                recommendations: recommendations
             };
+            
+            console.log("Image search bot response:", botResponse);
             setMessages(prev => [...prev, botResponse]);
             speak(botResponse.content);
 
@@ -153,39 +186,76 @@ const Chatbot = () => {
 
                     {/* Messages */}
                     <div className="flex-1 p-4 overflow-y-auto bg-gray-50">
-                        {messages.map((msg, idx) => (
-                            <div key={idx} className={`mb-4 ${msg.type === 'user' ? 'text-right' : 'text-left'}`}>
-                                <div className={`inline-block p-3 rounded-lg max-w-[85%] ${msg.type === 'user'
-                                    ? 'bg-accent text-white rounded-br-none'
-                                    : 'bg-white text-gray-800 border border-gray-200 rounded-bl-none shadow-sm'
-                                    }`}>
-                                    {msg.content}
-                                </div>
-
-                                {/* Product Recommendations Carousel */}
-                                {msg.recommendations && msg.recommendations.length > 0 && (
-                                    <div className="mt-3 flex gap-3 overflow-x-auto pb-2 snap-x">
-                                        {msg.recommendations.map(prod => (
-                                            <Link
-                                                to={`/product/${prod.id}`}
-                                                key={prod.id}
-                                                className="min-w-[140px] w-[140px] bg-white p-2 rounded border border-gray-200 shadow-sm flex-shrink-0 snap-center hover:border-accent block"
-                                            >
-                                                <div className="h-24 bg-gray-100 rounded mb-2 overflow-hidden">
-                                                    <img
-                                                        src={prod.image_url || "https://via.placeholder.com/150"}
-                                                        alt={prod.title}
-                                                        className="w-full h-full object-contain"
-                                                    />
-                                                </div>
-                                                <p className="text-xs font-bold truncate text-primary">{prod.title}</p>
-                                                <p className="text-xs text-accent font-bold">${prod.price}</p>
-                                            </Link>
-                                        ))}
+                        {messages.map((msg, idx) => {
+                            const hasRecommendations = msg.recommendations && Array.isArray(msg.recommendations) && msg.recommendations.length > 0;
+                            console.log(`Message ${idx} - Type: ${msg.type}, Has recommendations:`, hasRecommendations, "Count:", msg.recommendations?.length);
+                            
+                            return (
+                                <div key={idx} className={`mb-4 ${msg.type === 'user' ? 'text-right' : 'text-left'}`}>
+                                    <div className={`inline-block p-3 rounded-lg max-w-[85%] ${msg.type === 'user'
+                                        ? 'bg-accent text-white rounded-br-none'
+                                        : 'bg-white text-gray-800 border border-gray-200 rounded-bl-none shadow-sm'
+                                        }`}>
+                                        {msg.content}
                                     </div>
-                                )}
-                            </div>
-                        ))}
+
+                                    {/* Product Recommendations Carousel - Only for bot messages */}
+                                    {msg.type === 'bot' && hasRecommendations && (
+                                        <div className="mt-3 clear-both">
+                                            <div className="text-xs text-gray-500 mb-2 font-semibold">Found {msg.recommendations.length} products:</div>
+                                            <div className="flex gap-3 overflow-x-auto pb-2 snap-x scrollbar-thin" style={{ maxWidth: '100%', scrollbarWidth: 'thin' }}>
+                                                {msg.recommendations.map((prod, prodIdx) => {
+                                                    console.log(`Rendering product ${prodIdx}:`, prod);
+                                                    if (!prod || !prod.id) {
+                                                        console.warn("Invalid product in recommendations:", prod);
+                                                        return null;
+                                                    }
+                                                    return (
+                                                        <Link
+                                                            to={`/product/${prod.id}`}
+                                                            key={prod.id || `prod-${prodIdx}`}
+                                                            className="min-w-[140px] w-[140px] bg-white p-2 rounded-lg border-2 border-gray-200 shadow-md flex-shrink-0 snap-center hover:border-accent hover:shadow-lg transition-all block"
+                                                        >
+                                                            <div className="h-24 bg-gray-100 rounded mb-2 overflow-hidden flex items-center justify-center">
+                                                                <img
+                                                                    src={prod.image || prod.image_url || "https://via.placeholder.com/150"}
+                                                                    alt={prod.title || 'Product'}
+                                                                    className="w-full h-full object-contain"
+                                                                    onError={(e) => {
+                                                                        e.target.src = "https://via.placeholder.com/150";
+                                                                    }}
+                                                                />
+                                                            </div>
+                                                            <p className="text-xs font-bold truncate text-primary mb-1">{prod.title || 'Untitled Product'}</p>
+                                                            <p className="text-xs text-accent font-bold">${prod.price || 'N/A'}</p>
+                                                        </Link>
+                                                    );
+                                                })}
+                                            </div>
+                                        </div>
+                                    )}
+                                    
+                                    {/* Fallback: Show recommendations as text if they exist but can't render */}
+                                    {msg.type === 'bot' && msg.recommendations && !hasRecommendations && (
+                                        <div className="mt-2 p-2 bg-yellow-50 border border-yellow-200 rounded text-xs">
+                                            <strong>Debug:</strong> Recommendations exist but are not in expected format.
+                                            <pre className="mt-1 text-xs overflow-auto max-h-32">
+                                                {JSON.stringify(msg.recommendations, null, 2)}
+                                            </pre>
+                                        </div>
+                                    )}
+                                    
+                                    {/* Debug info in development */}
+                                    {process.env.NODE_ENV === 'development' && msg.type === 'bot' && (
+                                        <div className="mt-1 text-xs text-gray-400">
+                                            Debug: recommendations={msg.recommendations?.length || 0}, 
+                                            isArray={Array.isArray(msg.recommendations)}, 
+                                            hasRecommendations={hasRecommendations}
+                                        </div>
+                                    )}
+                                </div>
+                            );
+                        })}
                         {isLoading && (
                             <div className="text-left mb-4">
                                 <div className="inline-block p-3 bg-white rounded-lg border border-gray-200 shadow-sm">

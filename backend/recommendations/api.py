@@ -55,23 +55,39 @@ def recommend(request):
                     cart_total = float(cart.total_price)
             except Exception as e:
                 print(f"Error fetching user/cart info for recommendations: {e}")
+                # Fallback to default profile if user fetch fails
+                user_profile = {
+                    "monthly_budget": 1000.0,
+                    "spending_habits": 'card'
+                }
+        else:
+            # Default profile for unauthenticated users - budget will be inferred from query
+            user_profile = {
+                "monthly_budget": 1000.0,
+                "spending_habits": 'card'
+            }
         
         # 2. Handle Visual Context if image is provided
         visual_ids = []
         if image_file:
             try:
-                from products.views import ImageEmbedding, get_qdrant_client, VISUAL_COLLECTION
+                from fastembed import ImageEmbedding
+                from pay4all.qdrant_config import get_qdrant_client, VISUAL_COLLECTION
                 import tempfile
                 import os
+                
+                print(f"Processing image file: {image_file.name}, size: {image_file.size}")
                 
                 with tempfile.NamedTemporaryFile(suffix=".jpg", delete=False) as tmp:
                     for chunk in image_file.chunks():
                         tmp.write(chunk)
                     tmp_path = tmp.name
                 
+                print(f"Temp image saved to: {tmp_path}")
                 image_model = ImageEmbedding(model_name="Qdrant/clip-ViT-B-32-vision")
                 image_embedding = list(image_model.embed([tmp_path]))[0]
                 os.unlink(tmp_path)
+                print(f"Image embedding generated, length: {len(image_embedding)}")
                 
                 client = get_qdrant_client()
                 visual_results = client.query_points(
@@ -80,8 +96,11 @@ def recommend(request):
                     limit=50
                 )
                 visual_ids = [point.id for point in visual_results.points]
+                print(f"Visual search found {len(visual_ids)} product IDs")
             except Exception as e:
                 print(f"Visual processing in API failed: {e}")
+                import traceback
+                traceback.print_exc()
 
         # 3. Initialize and Invoke Graph
         app = create_recommendation_graph()
@@ -96,10 +115,32 @@ def recommend(request):
             "final_recommendations": [],
             "explanation": "",
             "visual_ids": visual_ids,
-            "diversity": diversity  # Pass MMR diversity parameter
+            "diversity": diversity,  # Pass MMR diversity parameter
+            "intent": "SHOPPING",  # Will be set by intent_classification node
+            "bank_data": None,
+            "anomalies": [],
+            "alternatives": [],
+            "budget_respected": True,
+            "safety_check_passed": True
         }
         
         result = app.invoke(initial_state)
+        
+        # Debug logging - check all stages
+        print(f"\n=== RECOMMENDATION DEBUG ===")
+        print(f"Query: {query}")
+        print(f"Retrieved products: {len(result.get('retrieved_products', []))}")
+        print(f"Filtered products: {len(result.get('filtered_products', []))}")
+        print(f"Final recommendations: {len(result.get('final_recommendations', []))}")
+        print(f"Alternatives: {len(result.get('alternatives', []))}")
+        
+        if result.get('retrieved_products'):
+            print(f"First retrieved product: {result['retrieved_products'][0]}")
+        if result.get('filtered_products'):
+            print(f"First filtered product: {result['filtered_products'][0]}")
+        if result.get('final_recommendations'):
+            print(f"First final recommendation: {result['final_recommendations'][0]}")
+        print(f"============================\n")
         
         # Track search for anomaly detection
         results_count = len(result.get("final_recommendations", []))
@@ -116,9 +157,62 @@ def recommend(request):
             logger = logging.getLogger(__name__)
             logger.warning(f"Potential bot detected: user {user_id}")
         
+        final_recommendations = result.get("final_recommendations", [])
+        
+        print(f"\n=== FORMATTING RECOMMENDATIONS ===")
+        print(f"Raw final_recommendations count: {len(final_recommendations)}")
+        if final_recommendations:
+            print(f"First raw recommendation structure: {final_recommendations[0]}")
+            print(f"First raw recommendation keys: {list(final_recommendations[0].keys()) if isinstance(final_recommendations[0], dict) else 'Not a dict'}")
+        
+        # Ensure all recommendations have required fields and verify products exist
+        from products.models import Product
+        formatted_recommendations = []
+        for idx, rec in enumerate(final_recommendations):
+            print(f"Processing recommendation {idx}: {type(rec)}, is_dict: {isinstance(rec, dict)}")
+            if isinstance(rec, dict):
+                rec_id = rec.get('id')
+                print(f"  - Has 'id': {rec_id is not None}, id value: {rec_id}, type: {type(rec_id)}")
+                if rec_id:
+                    # Convert to int if it's a string
+                    try:
+                        product_id = int(rec_id)
+                    except (ValueError, TypeError):
+                        print(f"  - SKIPPED: Invalid ID format: {rec_id}")
+                        continue
+                    
+                    # Verify product exists in database
+                    try:
+                        product = Product.objects.get(pk=product_id)
+                        print(f"  - Product exists: {product.title}")
+                    except Product.DoesNotExist:
+                        print(f"  - SKIPPED: Product with ID {product_id} does not exist in database")
+                        continue
+                    except Exception as e:
+                        print(f"  - ERROR checking product: {e}")
+                        continue
+                    
+                    formatted_recommendations.append({
+                        'id': product_id,
+                        'title': rec.get('title') or product.title,
+                        'price': rec.get('price') or product.price or 'N/A',
+                        'image': rec.get('image') or rec.get('image_url') or product.get_first_image(),
+                        'image_url': rec.get('image_url') or rec.get('image') or product.get_first_image(),
+                        'category': rec.get('category') or (product.category.name if product.category else ''),
+                        'similarity_score': rec.get('similarity_score', 0)
+                    })
+                    print(f"  - ✓ Added to formatted recommendations: ID={product_id}, Title={formatted_recommendations[-1]['title']}")
+                else:
+                    print(f"  - SKIPPED: No 'id' field")
+            else:
+                print(f"  - SKIPPED: Not a dict, type: {type(rec)}")
+        
+        print(f"Formatted {len(formatted_recommendations)} recommendations out of {len(final_recommendations)} total")
+        print(f"===================================\n")
+        
         return JsonResponse({
             "inferred_budget": result.get("inferred_budget"),
-            "recommendations": result.get("final_recommendations"),
+            "recommendations": formatted_recommendations,
             "explanation": result.get("explanation"),
             "budget_respected": result.get("budget_respected", True)
         })

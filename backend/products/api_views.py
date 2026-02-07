@@ -122,12 +122,21 @@ class ResultsAPIView(views.APIView):
         inferred_budget = None
 
         if query:
-            if use_smart and request.user.is_authenticated:
+            if use_smart:
                 try:
-                    user_profile = {
-                        "monthly_budget": float(request.user.monthly_budget) if hasattr(request.user, 'monthly_budget') else 1000.0,
-                        "spending_habits": request.user.payment_preferences if hasattr(request.user, 'payment_preferences') else 'card'
-                    }
+                    # Use user profile if authenticated, otherwise use default profile
+                    if request.user.is_authenticated:
+                        user_profile = {
+                            "monthly_budget": float(request.user.monthly_budget) if hasattr(request.user, 'monthly_budget') else 1000.0,
+                            "spending_habits": request.user.payment_preferences if hasattr(request.user, 'payment_preferences') else 'card'
+                        }
+                    else:
+                        # Default profile for unauthenticated users - budget will be inferred from query
+                        user_profile = {
+                            "monthly_budget": 1000.0,
+                            "spending_habits": 'card'
+                        }
+                    
                     app = create_recommendation_graph()
                     state = {
                         "query": query,
@@ -136,17 +145,29 @@ class ResultsAPIView(views.APIView):
                         "retrieved_products": [],
                         "filtered_products": [],
                         "final_recommendations": [],
-                        "explanation": ""
+                        "explanation": "",
+                        "cart_total": 0.0,
+                        "visual_ids": [],
+                        "diversity": 0.7
                     }
                     result = app.invoke(state)
                     if result.get("final_recommendations"):
                         p_ids = [p.get('id') for p in result["final_recommendations"] if p.get('id')]
-                        preserved = Case(*[When(pk=pk, then=pos) for pos, pk in enumerate(p_ids)])
-                        products = Product.objects.filter(pk__in=p_ids).order_by(preserved)
-                        explanation = result.get("explanation")
-                        inferred_budget = result.get("inferred_budget")
+                        if p_ids:
+                            preserved = Case(*[When(pk=pk, then=pos) for pos, pk in enumerate(p_ids)])
+                            products = Product.objects.filter(pk__in=p_ids).order_by(preserved)
+                            explanation = result.get("explanation")
+                            inferred_budget = result.get("inferred_budget")
+                        else:
+                            # If no recommendations, fallback to semantic search
+                            products = self.semantic_search(query)
+                    else:
+                        # If no recommendations, fallback to semantic search
+                        products = self.semantic_search(query)
                 except Exception as e:
                     print(f"Smart search failed: {e}")
+                    import traceback
+                    traceback.print_exc()
                     # Fallback to semantic
                     products = self.semantic_search(query)
             else:

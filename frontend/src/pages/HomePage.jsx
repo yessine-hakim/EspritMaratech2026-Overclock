@@ -86,27 +86,29 @@ const HomePage = () => {
             </section>
 
             {/* Categories Section */}
-            <section className="mb-20" aria-labelledby="categories-title">
-                <h3 id="categories-title" className="text-3xl font-bold text-center text-primary mb-12">Shop by Category</h3>
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-6" role="list">
-                    {categories.map(cat => (
-                        <div key={cat.id} role="listitem">
-                            <Link
-                                to={`/results?category=${cat.id}`}
-                                className="bg-white p-8 rounded-2xl shadow-sm hover:shadow-md hover:-translate-y-1 transition-all duration-300 flex flex-col items-center border border-transparent hover:border-accent/20 group h-full focus-visible:ring-4 focus-visible:ring-accent/20 outline-none"
-                                aria-label={`Shop in ${cat.name} category`}
-                            >
-                                <div className="w-16 h-16 rounded-full bg-accent/10 flex items-center justify-center text-accent mb-4 group-hover:bg-accent group-hover:text-white transition-colors" aria-hidden="true">
-                                    {/* Simple placeholder icons logic */}
-                                    <div className="w-8 h-8 bg-current rounded-sm opacity-50"></div>
-                                </div>
-                                <h4 className="font-bold text-primary group-hover:text-accent transition-colors">{cat.name}</h4>
-                                <p className="text-sm text-gray-500 mt-1">Explore</p>
-                            </Link>
-                        </div>
-                    ))}
-                </div>
-            </section>
+            {categories.length > 0 && (
+                <section className="mb-20" aria-labelledby="categories-title">
+                    <h3 id="categories-title" className="text-3xl font-bold text-center text-primary mb-12">Shop by Category</h3>
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-6" role="list">
+                        {categories.map(cat => (
+                            <div key={cat.id} role="listitem">
+                                <Link
+                                    to={`/results?category=${cat.id}`}
+                                    className="bg-white p-8 rounded-2xl shadow-sm hover:shadow-md hover:-translate-y-1 transition-all duration-300 flex flex-col items-center border border-transparent hover:border-accent/20 group h-full focus-visible:ring-4 focus-visible:ring-accent/20 outline-none"
+                                    aria-label={`Shop in ${cat.name} category`}
+                                >
+                                    <div className="w-16 h-16 rounded-full bg-accent/10 flex items-center justify-center text-accent mb-4 group-hover:bg-accent group-hover:text-white transition-colors" aria-hidden="true">
+                                        {/* Simple placeholder icons logic */}
+                                        <div className="w-8 h-8 bg-current rounded-sm opacity-50"></div>
+                                    </div>
+                                    <h4 className="font-bold text-primary group-hover:text-accent transition-colors">{cat.name}</h4>
+                                    <p className="text-sm text-gray-500 mt-1">Explore</p>
+                                </Link>
+                            </div>
+                        ))}
+                    </div>
+                </section>
+            )}
 
             {/* CTA Section */}
             <section className="bg-white rounded-3xl p-12 text-center shadow-lg border border-gray-100 focus-mode-distraction" aria-labelledby="cta-title">

@@ -99,17 +99,6 @@ const GlobalVoiceCommander = () => {
         }
     };
 
-    // Shortcut: Press 'Ctrl+V' to toggle listening
-    useEffect(() => {
-        const handleKeyDown = (e) => {
-            if (e.key.toLowerCase() === 'v' && e.ctrlKey) {
-                e.preventDefault();
-                toggleListening();
-            }
-        };
-        window.addEventListener('keydown', handleKeyDown);
-        return () => window.removeEventListener('keydown', handleKeyDown);
-    }, [isListening]);
 
     return (
         <div className="fixed top-24 left-6 z-50 flex flex-col items-center gap-2">
@@ -119,7 +108,7 @@ const GlobalVoiceCommander = () => {
                     ? 'bg-red-500 border-red-200 text-white animate-pulse'
                     : 'bg-white border-accent/20 text-accent hover:border-accent'
                     }`}
-                title="Global Voice Command (Ctrl+V)"
+                title="Global Voice Command"
                 aria-label={isListening ? "Stop listening" : "Start voice command"}
             >
                 <FaMicrophone size={24} />
