@@ -23,7 +23,7 @@ This solution is developed to benefit **IBSAR** (l'Association IBSAR pour la pro
 ## 🚀 Main Features
 
 ### 🎙️ 1. Intelligent Voice Assistant (Hands-Free)
-*   **Contextual Commands**: "Assistant, what is my balance?", "Can I afford this laptop?".
+*   **Contextual Commands**: "Assistant, what is my balance?", "Can I afford this Yogurt?".
 *   **Conversational Logic**: Natural follow-up support without constant wake-words.
 *   **Visual Feedback Overlay**: Real-time animation showing listening, thinking, and speaking states.
 
@@ -63,18 +63,21 @@ This solution is developed to benefit **IBSAR** (l'Association IBSAR pour la pro
 
 ### 🛠 Setup Instructions
 
-### 1. Clone & Navigate
+#### 1. Clone the Repository
 ```bash
 git clone https://github.com/yessine-hakim/EspritMaratech2026-Overclock.git
 cd EspritMaratech2026-Overclock
 ```
 
-### 2. Create Virtual Environment
+#### 2. Backend Setup
 **Windows:**
 ```bash
 cd backend
 python -m venv env
 .\env\Scripts\activate
+pip install -r requirements.txt
+python manage.py migrate
+python manage.py runserver
 ```
 
 **macOS/Linux:**
@@ -82,22 +85,12 @@ python -m venv env
 cd backend
 python3 -m venv env
 source env/bin/activate
-```
-
-### 3. Install Dependencies
-```bash
 pip install -r requirements.txt
-```
-
-### 4. Run the Development Server
-```bash
+python manage.py migrate
 python manage.py runserver
 ```
 
----
-
-### 🌐 Frontend Development (Optional)
-If you wish to run the frontend independently:
+#### 3. Frontend Setup
 ```bash
 cd frontend
 npm install
