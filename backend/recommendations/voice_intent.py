@@ -39,6 +39,11 @@ def classify_voice_intent(request):
         parser = JsonOutputParser(pydantic_object=VoiceIntentOutput)
 
         prompt = ChatPromptTemplate.from_messages([
+            # Task: Implement Voice-Driven Authentication (English)
+            # - [x] Update Voice Brain for Auth intents (English extraction)
+            # - [x] Implement multi-step conversational state in GlobalVoiceCommander
+            # - [x] Add field extraction for email/password/name
+            # - [x] Verify 100% hands-free Multilingual Login & Registration
             ("system", """You are the AI Voice Brain for Pay4All, an inclusive shopping app.
             Your job is to convert a user's voice transcript into a structured JSON command for the frontend.
 
@@ -57,12 +62,14 @@ def classify_voice_intent(request):
                Targets: 'add', 'remove', 'view', 'clear', 'checkout'
                Value: item name or index for add/remove.
             6. Action: 'confirm'
-               Target: 'payment', 'transfer', 'generic'
+               Target: 'payment', 'transfer', 'generic', 'register'
             7. Action: 'cancel'
                Target: 'any'
-            8. Action: 'status_check'
+            8. Action: 'auth'
+               Targets: 'login', 'register', 'logout', 'credential_input'
+            9. Action: 'status_check'
                Target: 'affordability', 'balance', 'general'
-            9. Action: 'chat'
+            10. Action: 'chat'
                Target: 'general' (For general questions or conversation)
 
             Output valid JSON only. Respond with helpful information in the 'response' field.

@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useA11y } from '../context/A11yContext';
 import { useCart } from '../context/CartContext';
+import { useAuth } from '../context/AuthContext';
 import { FaMicrophone, FaHeadset } from 'react-icons/fa';
 import api from '../api';
 
@@ -10,8 +11,11 @@ const GlobalVoiceCommander = () => {
     const [isHandsFree, setIsHandsFree] = useState(true); // Always on by default
     const [lastCommand, setLastCommand] = useState('');
     const [pendingAction, setPendingAction] = useState(null); // { type, total, items }
+    const [authStep, setAuthStep] = useState(null); // null, 'LOGIN_EMAIL', 'LOGIN_PASSWORD', 'REG_EMAIL', 'REG_FIRST', 'REG_LAST', 'REG_BUDGET', 'REG_PASSWORD', 'REG_CONFIRM'
+    const [authData, setAuthData] = useState({});
     const navigate = useNavigate();
     const location = useLocation();
+    const { user, login, logout, register } = useAuth();
     const { cart, addToCart, checkout } = useCart();
     const recognitionRef = useRef(null);
     const {
@@ -49,7 +53,112 @@ const GlobalVoiceCommander = () => {
 
             console.log("AI Intent Detected:", { action, target, value });
 
-            // --- SECURITY LAYER: Handle pending confirmations first ---
+            // --- AUTH FLOW HANDLER ---
+            if (authStep) {
+                // If the user says 'cancel', abort the flow
+                if (action === 'cancel' || processedTranscript.includes("cancel")) {
+                    speak("Authentication cancelled.");
+                    setAuthStep(null);
+                    setAuthData({});
+                    return;
+                }
+
+                const rawValue = processedTranscript; // Usually we want the raw transcript for names/emails
+
+                // LOGIN FLOW
+                if (authStep === 'LOGIN_EMAIL') {
+                    setAuthData({ ...authData, username: rawValue });
+                    setAuthStep('LOGIN_PASSWORD');
+                    speak("Got it. Now, please say your password.");
+                    return;
+                }
+                if (authStep === 'LOGIN_PASSWORD') {
+                    const email = authData.username;
+                    const pass = rawValue;
+                    setAuthStep(null);
+                    setAuthData({});
+                    speak("Identifying your voice... please wait.");
+                    try {
+                        await login(email, pass);
+                        navigate('/');
+                    } catch (e) {
+                        speak("Identification failed. Please check your credentials.");
+                    }
+                    return;
+                }
+
+                // Registration Steps
+                if (authStep === 'REG_EMAIL') {
+                    setAuthData({ ...authData, email: rawValue });
+                    setAuthStep('REG_FIRST');
+                    speak("Thank you. What is your first name?");
+                    return;
+                }
+                if (authStep === 'REG_FIRST') {
+                    setAuthData({ ...authData, first_name: rawValue });
+                    setAuthStep('REG_LAST');
+                    speak("And your last name?");
+                    return;
+                }
+                if (authStep === 'REG_LAST') {
+                    setAuthData({ ...authData, last_name: rawValue });
+                    setAuthStep('REG_BUDGET');
+                    speak("What is your monthly shopping budget?");
+                    return;
+                }
+                if (authStep === 'REG_BUDGET') {
+                    const budget = parseFloat(rawValue.replace(/[^0-9.]/g, '')) || 100;
+                    setAuthData({ ...authData, monthly_budget: budget });
+                    setAuthStep('REG_PASSWORD');
+                    speak("Almost done. Please choose a voice password.");
+                    return;
+                }
+                if (authStep === 'REG_PASSWORD') {
+                    setAuthData({ ...authData, password: rawValue, confirmPassword: rawValue });
+                    setAuthStep('REG_CONFIRM');
+                    speak(`Check your details. You are registering as ${authData.first_name}. Say 'Confirm registration' to finish.`);
+                    return;
+                }
+
+                // If it's a 'confirm' action in REG_CONFIRM step
+                if (authStep === 'REG_CONFIRM') {
+                    if (action === 'confirm' || processedTranscript.includes("confirm")) {
+                        speak("Creating your account now.");
+                        try {
+                            const { confirmPassword, ...apiData } = authData; // Remove confirmPassword before sending
+                            await register(apiData);
+                            setAuthStep(null);
+                            setAuthData({});
+                            navigate('/');
+                        } catch (e) {
+                            speak("Registration failed. Some details were missing or incorrect.");
+                            setAuthStep(null);
+                        }
+                        return;
+                    }
+                }
+            }
+
+            // --- AUTH TRIGGER HANDLER ---
+            if (action === 'auth') {
+                if (target === 'login') {
+                    setAuthStep('LOGIN_EMAIL');
+                    speak("Let's identify you. Please say your registered email address.");
+                    return;
+                }
+                if (target === 'register') {
+                    setAuthStep('REG_EMAIL');
+                    speak("Welcome. Let's create your account. Please say your email address.");
+                    return;
+                }
+                if (target === 'logout') {
+                    await logout();
+                    navigate('/login');
+                    return;
+                }
+            }
+
+            // --- SECURITY LAYER... (existing pendingAction code stays below)
             if (pendingAction) {
                 if (action === 'confirm' || processedTranscript.includes("confirm")) {
                     if (pendingAction.type === 'CHECKOUT') {

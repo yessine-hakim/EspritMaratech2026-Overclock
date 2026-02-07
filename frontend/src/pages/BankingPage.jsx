@@ -56,13 +56,15 @@ const BankingPage = () => {
 
     return (
         <div className="max-w-4xl mx-auto p-6 space-y-8 animate-fadeIn">
-            <header className="flex justify-between items-center">
-                <h1 className="text-3xl font-bold text-primary flex items-center gap-3">
+            <header className="flex flex-col gap-6">
+                <h1 className="text-5xl font-black text-primary flex items-center gap-4">
                     <FaWallet className="text-accent" /> My Wallet
                 </h1>
-                <div className="bg-white p-4 rounded-2xl shadow-sm border border-gray-100 text-right">
-                    <p className="text-sm text-gray-500 font-medium">Available Balance</p>
-                    <p className="text-4xl font-black text-accent">{account?.balance} <span className="text-xl font-normal text-gray-400">TND</span></p>
+                <div className="bg-white p-8 rounded-3xl shadow-xl border-4 border-accent/10 text-left max-w-sm">
+                    <p className="text-lg text-gray-500 font-bold uppercase tracking-widest mb-1">Available Balance</p>
+                    <p className="text-6xl font-black text-primary">
+                        {account?.balance} <span className="text-2xl font-bold text-accent">TND</span>
+                    </p>
                 </div>
             </header>
 
@@ -121,21 +123,21 @@ const BankingPage = () => {
                 ) : (
                     <div className="space-y-4">
                         {transactions.map(tx => (
-                            <div key={tx.id} className="flex items-center justify-between p-4 hover:bg-gray-50 rounded-2xl transition-colors border border-transparent hover:border-gray-100">
+                            <div key={tx.id} className="p-6 hover:bg-gray-50 rounded-3xl transition-all border-2 border-transparent hover:border-accent/10 flex flex-col gap-2">
                                 <div className="flex items-center gap-4">
-                                    <div className={`p-3 rounded-xl ${tx.recipient === account?.iban ? 'bg-emerald-50 text-emerald-600' : 'bg-rose-50 text-rose-600'}`}>
-                                        {tx.recipient === account?.iban ? <FaArrowDown /> : <FaArrowUp />}
+                                    <div className={`p-4 rounded-2xl ${tx.recipient === account?.iban ? 'bg-emerald-100 text-emerald-700' : 'bg-rose-100 text-rose-700'}`}>
+                                        {tx.recipient === account?.iban ? <FaArrowDown size={24} /> : <FaArrowUp size={24} />}
                                     </div>
-                                    <div>
-                                        <p className="font-bold text-primary">{tx.description || tx.transaction_type}</p>
-                                        <p className="text-xs text-gray-400">{new Date(tx.timestamp).toLocaleString()}</p>
+                                    <div className="flex-1">
+                                        <p className="text-2xl font-black text-primary leading-tight">{tx.description || tx.transaction_type}</p>
+                                        <p className="text-lg font-bold text-gray-500">{new Date(tx.timestamp).toLocaleString()}</p>
                                     </div>
                                 </div>
-                                <div className="text-right">
-                                    <p className={`font-black ${tx.recipient === account?.iban ? 'text-emerald-600' : 'text-rose-600'}`}>
-                                        {tx.recipient === account?.iban ? '+' : '-'}{tx.amount} <span className="text-xs font-normal">TND</span>
+                                <div className="pl-20 mt-2">
+                                    <p className={`text-3xl font-black ${tx.recipient === account?.iban ? 'text-emerald-700' : 'text-rose-700'}`}>
+                                        {tx.recipient === account?.iban ? '+' : '-'}{tx.amount} <span className="text-xl">TND</span>
                                     </p>
-                                    <p className="text-[10px] text-gray-300 uppercase tracking-tighter">{tx.category}</p>
+                                    <p className="text-sm font-bold text-accent uppercase tracking-widest mt-1 opacity-60">{tx.category}</p>
                                 </div>
                             </div>
                         ))}
