@@ -67,7 +67,7 @@ const LoginPage = () => {
 
                     <button
                         type="submit"
-                        className="w-full py-4 bg-accent text-white rounded-xl font-bold hover:bg-[#0e5a56] transition-all transform hover:-translate-y-1 shadow-lg shadow-accent/20"
+                        className="w-full py-4 bg-accent text-white rounded-xl font-bold hover:bg-[#0e5a56] focus-visible:ring-4 focus-visible:ring-accent/30 outline-none transition-all transform hover:-translate-y-1 shadow-lg shadow-accent/20"
                     >
                         Sign In
                     </button>

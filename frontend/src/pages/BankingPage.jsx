@@ -47,18 +47,20 @@ const BankingPage = () => {
             <div className="grid md:grid-cols-3 gap-6">
                 <div className="bg-gradient-to-br from-accent to-[#0e5a56] p-6 rounded-3xl text-white shadow-xl transform hover:scale-105 transition-all">
                     <div className="flex justify-between items-start mb-8">
-                        <div className="bg-white/20 p-2 rounded-lg">
+                        <div className="bg-white/20 p-2 rounded-lg" aria-hidden="true">
                             <FaWallet size={20} />
                         </div>
                         <span className="text-xs font-bold tracking-widest uppercase opacity-80">Pay4All Card</span>
                     </div>
-                    <p className="text-xl font-mono mb-1 tracking-widest">{account?.iban?.replace(/(.{4})/g, '$1 ')}</p>
+                    <p className="text-xl font-mono mb-1 tracking-widest focus-visible:ring-2 focus-visible:ring-white outline-none rounded" tabIndex="0" aria-label={`IBAN: ${account?.iban}`}>
+                        {account?.iban?.replace(/(.{4})/g, '$1 ')}
+                    </p>
                     <div className="flex justify-between items-end">
-                        <div>
+                        <div tabIndex="0" className="focus-visible:ring-1 focus-visible:ring-white outline-none rounded px-1">
                             <p className="text-[10px] uppercase opacity-70">Card Holder</p>
                             <p className="text-sm font-bold uppercase">{user?.email?.split('@')[0]}</p>
                         </div>
-                        <div className="w-10 h-6 bg-yellow-400/80 rounded-md"></div>
+                        <div className="w-10 h-6 bg-yellow-400/80 rounded-md" aria-hidden="true"></div>
                     </div>
                 </div>
 
@@ -67,10 +69,10 @@ const BankingPage = () => {
                         <FaExchangeAlt className="text-accent" /> Quick Actions
                     </h2>
                     <div className="grid grid-cols-2 gap-4">
-                        <button className="flex items-center justify-center gap-2 p-4 bg-gray-50 rounded-2xl hover:bg-accent hover:text-white transition-all font-bold group">
+                        <button className="flex items-center justify-center gap-2 p-4 bg-gray-50 rounded-2xl hover:bg-accent hover:text-white focus-visible:bg-accent focus-visible:text-white outline-none transition-all font-bold group border border-transparent focus-visible:border-accent">
                             <FaArrowUp className="group-hover:translate-y-[-2px] transition-transform" /> Send Money
                         </button>
-                        <button className="flex items-center justify-center gap-2 p-4 bg-gray-50 rounded-2xl hover:bg-accent hover:text-white transition-all font-bold group">
+                        <button className="flex items-center justify-center gap-2 p-4 bg-gray-50 rounded-2xl hover:bg-accent hover:text-white focus-visible:bg-accent focus-visible:text-white outline-none transition-all font-bold group border border-transparent focus-visible:border-accent">
                             <FaArrowDown className="group-hover:translate-y-[2px] transition-transform" /> Request Pay
                         </button>
                     </div>

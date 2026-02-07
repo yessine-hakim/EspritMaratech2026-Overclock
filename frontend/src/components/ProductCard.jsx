@@ -64,8 +64,8 @@ const ProductCard = ({ product }) => {
 
                         <button
                             onClick={handleAdd}
-                            className="p-3 rounded-full bg-gray-50 text-accent hover:bg-accent hover:text-white transition-all duration-300 shadow-sm"
-                            title="Add to Cart"
+                            className="p-3 rounded-full bg-gray-50 text-accent hover:bg-accent hover:text-white focus-visible:bg-accent focus-visible:text-white transition-all duration-300 shadow-sm outline-none ring-offset-2 focus-visible:ring-2 focus-visible:ring-accent"
+                            title="Add to Cart (Enter/Space)"
                             aria-label={`Add ${product.title} to cart`}
                         >
                             <FaShoppingCart size={18} aria-hidden="true" />

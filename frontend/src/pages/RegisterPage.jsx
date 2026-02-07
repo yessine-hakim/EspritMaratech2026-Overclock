@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useNavigate, Link } from 'react-router-dom';
 
@@ -19,28 +19,30 @@ const RegisterPage = () => {
         currency: 'USD'
     });
     const [error, setError] = useState('');
+    const errorRef = useRef(null);
 
     const handleChange = (e) => {
         setFormData({ ...formData, [e.target.name]: e.target.value });
+        if (error) setError(''); // Clear error on change
     };
 
     const handleSubmit = async (e) => {
         e.preventDefault();
         if (formData.password !== formData.confirmPassword) {
             setError("Passwords don't match");
+            errorRef.current?.focus();
             return;
         }
 
         try {
-            // Prepare data for API (remove confirmPassword)
             const { confirmPassword, ...apiData } = formData;
             await register(apiData);
             navigate('/');
         } catch (err) {
             console.error(err);
-            // detailed error from backend serializer
             const msg = err.response?.data ? JSON.stringify(err.response.data) : 'Registration failed';
             setError(msg);
+            errorRef.current?.focus();
         }
     };
 
@@ -53,8 +55,15 @@ const RegisterPage = () => {
                 </div>
 
                 {error && (
-                    <div className="bg-red-50 text-red-600 p-4 rounded-lg mb-6 text-sm break-words">
-                        {error}
+                    <div
+                        ref={errorRef}
+                        className="bg-red-50 text-red-600 p-4 rounded-lg mb-6 text-sm break-words focus:outline-none focus:ring-2 focus:ring-red-500"
+                        role="alert"
+                        aria-live="assertive"
+                        id="registration-error"
+                        tabIndex="-1"
+                    >
+                        <strong>Error:</strong> {error}
                     </div>
                 )}
 
@@ -65,21 +74,25 @@ const RegisterPage = () => {
                     </div>
 
                     <div className="md:col-span-2">
-                        <label className="block text-sm font-semibold text-primary mb-2">Email Address (Username)</label>
+                        <label htmlFor="reg-email" className="block text-sm font-semibold text-primary mb-2">Email Address (Username)</label>
                         <input
+                            id="reg-email"
                             type="email"
                             name="email"
-                            className="w-full px-4 py-3 rounded-lg border border-gray-light bg-gray-50 focus:bg-white focus:outline-none focus:border-accent focus:ring-2 focus:ring-accent/10 transition-colors"
+                            className={`w-full px-4 py-3 rounded-lg border bg-gray-50 focus:bg-white focus:outline-none focus:border-accent focus:ring-2 focus:ring-accent/10 transition-colors ${error ? 'border-red-500' : 'border-gray-light'}`}
                             placeholder="john@example.com"
                             value={formData.email}
                             onChange={handleChange}
                             required
+                            aria-invalid={!!error}
+                            aria-describedby={error ? 'registration-error' : undefined}
                         />
                     </div>
 
                     <div>
-                        <label className="block text-sm font-semibold text-primary mb-2">Password</label>
+                        <label htmlFor="reg-password" className="block text-sm font-semibold text-primary mb-2">Password</label>
                         <input
+                            id="reg-password"
                             type="password"
                             name="password"
                             className="w-full px-4 py-3 rounded-lg border border-gray-light bg-gray-50 focus:bg-white focus:outline-none focus:border-accent focus:ring-2 focus:ring-accent/10 transition-colors"
@@ -90,8 +103,9 @@ const RegisterPage = () => {
                         />
                     </div>
                     <div>
-                        <label className="block text-sm font-semibold text-primary mb-2">Confirm Password</label>
+                        <label htmlFor="reg-confirm" className="block text-sm font-semibold text-primary mb-2">Confirm Password</label>
                         <input
+                            id="reg-confirm"
                             type="password"
                             name="confirmPassword"
                             className="w-full px-4 py-3 rounded-lg border border-gray-light bg-gray-50 focus:bg-white focus:outline-none focus:border-accent focus:ring-2 focus:ring-accent/10 transition-colors"
@@ -108,8 +122,9 @@ const RegisterPage = () => {
                     </div>
 
                     <div>
-                        <label className="block text-sm font-semibold text-primary mb-2">First Name</label>
+                        <label htmlFor="reg-first" className="block text-sm font-semibold text-primary mb-2">First Name</label>
                         <input
+                            id="reg-first"
                             type="text"
                             name="first_name"
                             className="w-full px-4 py-3 rounded-lg border border-gray-light bg-gray-50 focus:bg-white focus:outline-none focus:border-accent focus:ring-2 focus:ring-accent/10 transition-colors"
@@ -120,8 +135,9 @@ const RegisterPage = () => {
                         />
                     </div>
                     <div>
-                        <label className="block text-sm font-semibold text-primary mb-2">Last Name</label>
+                        <label htmlFor="reg-last" className="block text-sm font-semibold text-primary mb-2">Last Name</label>
                         <input
+                            id="reg-last"
                             type="text"
                             name="last_name"
                             className="w-full px-4 py-3 rounded-lg border border-gray-light bg-gray-50 focus:bg-white focus:outline-none focus:border-accent focus:ring-2 focus:ring-accent/10 transition-colors"

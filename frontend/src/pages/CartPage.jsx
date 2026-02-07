@@ -32,20 +32,26 @@ const CartPage = () => {
                             <div className="flex items-center border rounded">
                                 <button
                                     onClick={() => updateItem(item.id, 'decrease')}
-                                    className="p-2 hover:bg-gray-100" aria-label="Decrease quantity"
+                                    className="p-2 hover:bg-gray-100 focus-visible:bg-accent focus-visible:text-white outline-none rounded-l transition-colors"
+                                    aria-label="Decrease quantity"
+                                    title="Decrease (Enter/Space)"
                                 ><FaMinus size={12} /></button>
-                                <span className="px-4 font-medium">{item.quantity}</span>
+                                <span className="px-4 font-medium border-x" aria-current="true">{item.quantity}</span>
                                 <button
                                     onClick={() => updateItem(item.id, 'increase')}
-                                    className="p-2 hover:bg-gray-100" aria-label="Increase quantity"
+                                    className="p-2 hover:bg-gray-100 focus-visible:bg-accent focus-visible:text-white outline-none rounded-r transition-colors"
+                                    aria-label="Increase quantity"
+                                    title="Increase (Enter/Space)"
                                 ><FaPlus size={12} /></button>
                             </div>
                             <div className="text-right w-24">
-                                <p className="font-bold text-lg">${item.total_price.toFixed(2)}</p>
+                                <p className="font-bold text-lg text-primary">${item.total_price.toFixed(2)}</p>
                             </div>
                             <button
                                 onClick={() => updateItem(item.id, 'remove')}
-                                className="text-red-500 hover:text-red-700" aria-label="Remove item"
+                                className="text-red-500 hover:text-red-700 p-2 rounded-full focus-visible:ring-2 focus-visible:ring-red-500 outline-none transition-all"
+                                aria-label="Remove item"
+                                title="Remove (Enter/Space)"
                             >
                                 <FaTrash />
                             </button>
@@ -54,12 +60,12 @@ const CartPage = () => {
                 ))}
             </div>
 
-            <div className="mt-8 flex justify-between items-center bg-gray-50 p-6 rounded">
-                <span className="text-2xl font-semibold">Total:</span>
-                <span className="text-2xl font-bold text-green-700">${cart.total_price.toFixed(2)}</span>
+            <div className="mt-8 flex justify-between items-center bg-gray-50 p-6 rounded-xl">
+                <span className="text-2xl font-semibold text-primary">Total:</span>
+                <span className="text-2xl font-bold text-accent">${cart.total_price.toFixed(2)}</span>
             </div>
 
-            <button className="w-full bg-blue-600 text-white text-xl py-3 rounded mt-6 hover:bg-blue-700 font-bold">
+            <button className="w-full bg-accent text-white text-xl py-4 rounded-xl mt-8 hover:bg-[#0e5a56] focus-visible:ring-4 focus-visible:ring-accent/30 outline-none font-bold transition-all shadow-lg hover:shadow-xl">
                 Proceed to Checkout
             </button>
         </div>

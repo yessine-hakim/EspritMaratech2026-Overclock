@@ -16,23 +16,50 @@ const AccessibilityModal = ({ isOpen, onClose }) => {
         grayscale, setGrayscale,
         visualAlerts, setVisualAlerts,
         focusMode, setFocusMode,
+        dyslexiaFont, setDyslexiaFont,
         speak
     } = useA11y();
 
     const modalRef = useRef(null);
 
-    // Handle Escape key to close
+    // Focus Trap & Escape handling
     useEffect(() => {
-        const handleEsc = (e) => {
+        const handleKeyDown = (e) => {
             if (e.key === 'Escape') onClose();
+
+            if (e.key === 'Tab') {
+                const focusableElements = modalRef.current?.querySelectorAll(
+                    'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
+                );
+                if (!focusableElements || focusableElements.length === 0) return;
+
+                const firstElement = focusableElements[0];
+                const lastElement = focusableElements[focusableElements.length - 1];
+
+                if (e.shiftKey) { // Shift + Tab
+                    if (document.activeElement === firstElement) {
+                        e.preventDefault();
+                        lastElement.focus();
+                    }
+                } else { // Tab
+                    if (document.activeElement === lastElement) {
+                        e.preventDefault();
+                        firstElement.focus();
+                    }
+                }
+            }
         };
+
         if (isOpen) {
-            window.addEventListener('keydown', handleEsc);
-            // Simple focus trap: focus the close button when opened
-            modalRef.current?.querySelector('button').focus();
+            window.addEventListener('keydown', handleKeyDown);
+            // Focus the close button or first element when opened
+            setTimeout(() => {
+                const closeBtn = modalRef.current?.querySelector('button');
+                closeBtn?.focus();
+            }, 100);
             speak("Accessibility Control Center opened.");
         }
-        return () => window.removeEventListener('keydown', handleEsc);
+        return () => window.removeEventListener('keydown', handleKeyDown);
     }, [isOpen, onClose, speak]);
 
     if (!isOpen) return null;
@@ -178,6 +205,31 @@ const AccessibilityModal = ({ isOpen, onClose }) => {
                             aria-label="Toggle Readability Mode"
                         >
                             <span className={`absolute top-1 left-1 w-6 h-6 bg-white rounded-full shadow-sm transition-transform ${readabilityMode ? 'translate-x-6' : ''}`}></span>
+                        </button>
+                    </div>
+
+                    {/* Content: Dyslexia Friendly */}
+                    <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-4">
+                            <div className={`p-3 rounded-2xl ${dyslexiaFont ? 'bg-primary text-white' : 'bg-gray-100 text-gray-500'}`} aria-hidden="true">
+                                <FaTextHeight size={20} />
+                            </div>
+                            <div>
+                                <h3 className="font-bold text-primary">Dyslexia Font</h3>
+                                <p className="text-xs text-gray-500">Optimized font for reading</p>
+                            </div>
+                        </div>
+                        <button
+                            onClick={() => {
+                                setDyslexiaFont(!dyslexiaFont);
+                                speak(`Dyslexia font ${!dyslexiaFont ? 'enabled' : 'disabled'}`);
+                            }}
+                            className={`w-14 h-8 rounded-full transition-all relative ${dyslexiaFont ? 'bg-accent' : 'bg-gray-200'}`}
+                            role="switch"
+                            aria-checked={dyslexiaFont}
+                            aria-label="Toggle Dyslexia Font"
+                        >
+                            <span className={`absolute top-1 left-1 w-6 h-6 bg-white rounded-full shadow-sm transition-transform ${dyslexiaFont ? 'translate-x-6' : ''}`}></span>
                         </button>
                     </div>
 

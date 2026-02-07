@@ -53,6 +53,13 @@ export const A11yProvider = ({ children }) => {
             return false;
         }
     });
+    const [dyslexiaFont, setDyslexiaFont] = useState(() => {
+        try {
+            return localStorage.getItem('a11y-dyslexia-font') === 'true';
+        } catch (e) {
+            return false;
+        }
+    });
     const [activeAlert, setActiveAlert] = useState(null);
 
     useEffect(() => {
@@ -65,6 +72,7 @@ export const A11yProvider = ({ children }) => {
             localStorage.setItem('a11y-grayscale', grayscale);
             localStorage.setItem('a11y-visual-alerts', visualAlerts);
             localStorage.setItem('a11y-focus-mode', focusMode);
+            localStorage.setItem('a11y-dyslexia-font', dyslexiaFont);
         } catch (e) {
             console.warn("localStorage persistence failed", e);
         }
@@ -86,8 +94,11 @@ export const A11yProvider = ({ children }) => {
         if (focusMode) body.classList.add('focus-mode');
         else body.classList.remove('focus-mode');
 
+        if (dyslexiaFont) body.classList.add('dyslexia-font');
+        else body.classList.remove('dyslexia-font');
+
         document.documentElement.style.fontSize = `${fontSize}%`;
-    }, [highContrast, fontSize, simplifiedMode, readabilityMode, grayscale, visualAlerts, focusMode]);
+    }, [highContrast, fontSize, simplifiedMode, readabilityMode, grayscale, visualAlerts, focusMode, dyslexiaFont]);
 
     const showVisualAlert = useCallback((text) => {
         if (visualAlerts) {
@@ -130,6 +141,7 @@ export const A11yProvider = ({ children }) => {
             grayscale, setGrayscale,
             visualAlerts, setVisualAlerts,
             focusMode, setFocusMode,
+            dyslexiaFont, setDyslexiaFont,
             announce,
             speak
         }}>

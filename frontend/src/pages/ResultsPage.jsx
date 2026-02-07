@@ -143,31 +143,39 @@ const ResultsPage = () => {
                     <h2 id="results-main-title" className="text-3xl font-bold text-primary mb-2">
                         {q ? `Results for "${q}"` : categoryId ? 'Category Search' : 'All Products'}
                     </h2>
-                    <p className="text-gray-medium" aria-live="polite">Showing {products.length} results</p>
+                    <p className="text-gray-medium" aria-live="polite" aria-atomic="true">
+                        {loading ? 'Searching...' : `Showing ${products.length} results`}
+                    </p>
                 </div>
 
-                {loading ? (
-                    <div className="flex justify-center items-center h-64" role="status" aria-label="Loading products">
-                        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-accent"></div>
-                        <span className="sr-only">Loading...</span>
-                    </div>
-                ) : products.length > 0 ? (
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3 gap-6">
-                        {products.map(p => (
-                            <ProductCard key={p.id} product={p} />
-                        ))}
-                    </div>
-                ) : (
-                    <div className="text-center py-20 bg-white rounded-xl border border-dashed border-gray-300">
-                        <p className="text-xl text-gray-500">No products found matching your criteria.</p>
-                        <button
-                            onClick={() => setSearchParams({})}
-                            className="mt-4 text-accent hover:underline font-medium"
-                        >
-                            Clear all filters
-                        </button>
-                    </div>
-                )}
+                <div
+                    className="relative"
+                    aria-busy={loading}
+                    aria-live="polite"
+                >
+                    {loading ? (
+                        <div className="flex justify-center items-center h-64" role="status">
+                            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-accent"></div>
+                            <span className="sr-only">Loading products...</span>
+                        </div>
+                    ) : products.length > 0 ? (
+                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3 gap-6">
+                            {products.map(p => (
+                                <ProductCard key={p.id} product={p} />
+                            ))}
+                        </div>
+                    ) : (
+                        <div className="text-center py-20 bg-white rounded-xl border border-dashed border-gray-300" role="status">
+                            <p className="text-xl text-gray-500">No products found matching your criteria.</p>
+                            <button
+                                onClick={() => setSearchParams({})}
+                                className="mt-4 text-accent hover:underline font-medium focus-visible:ring-2 focus-visible:ring-accent outline-none rounded p-1"
+                            >
+                                Clear all filters
+                            </button>
+                        </div>
+                    )}
+                </div>
 
                 {/* Pagination - Placeholder */}
                 <div className="mt-12 flex justify-center gap-4 pt-8 border-t border-gray-light">

@@ -85,7 +85,7 @@ const HomePage = () => {
                         <div key={cat.id} role="listitem">
                             <Link
                                 to={`/results?category=${cat.id}`}
-                                className="bg-white p-8 rounded-2xl shadow-sm hover:shadow-md hover:-translate-y-1 transition-all duration-300 flex flex-col items-center border border-transparent hover:border-accent/20 group h-full"
+                                className="bg-white p-8 rounded-2xl shadow-sm hover:shadow-md hover:-translate-y-1 transition-all duration-300 flex flex-col items-center border border-transparent hover:border-accent/20 group h-full focus-visible:ring-4 focus-visible:ring-accent/20 outline-none"
                                 aria-label={`Shop in ${cat.name} category`}
                             >
                                 <div className="w-16 h-16 rounded-full bg-accent/10 flex items-center justify-center text-accent mb-4 group-hover:bg-accent group-hover:text-white transition-colors" aria-hidden="true">
@@ -106,7 +106,7 @@ const HomePage = () => {
                 <p className="text-lg text-gray-600 mb-8 max-w-2xl mx-auto">
                     Explore thousands of products with budget-aware recommendations tailored to you.
                 </p>
-                <Link to="/results" className="inline-block px-10 py-4 bg-highlight text-primary rounded-xl font-bold hover:shadow-lg hover:-translate-y-1 transition-all duration-300">
+                <Link to="/results" className="inline-block px-10 py-4 bg-highlight text-primary rounded-xl font-bold hover:shadow-lg hover:-translate-y-1 transition-all duration-300 focus-visible:ring-4 focus-visible:ring-highlight/50 outline-none">
                     Browse All Products
                 </Link>
             </section>

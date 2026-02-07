@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useCart } from '../context/CartContext';
@@ -16,6 +16,30 @@ const Navbar = () => {
     const [isListening, setIsListening] = useState(false);
     const [selectedImage, setSelectedImage] = useState(null);
     const [isA11yModalOpen, setIsA11yModalOpen] = useState(false);
+    const searchInputRef = useRef(null);
+
+    // Global Keyboard Shortcuts
+    useEffect(() => {
+        const handleShortcuts = (e) => {
+            // Alt + S: Focus Search
+            if (e.altKey && e.key.toLowerCase() === 's') {
+                e.preventDefault();
+                searchInputRef.current?.focus();
+            }
+            // Alt + A: Open Accessibility
+            if (e.altKey && e.key.toLowerCase() === 'a') {
+                e.preventDefault();
+                setIsA11yModalOpen(true);
+            }
+            // Alt + C: Go to Cart
+            if (e.altKey && e.key.toLowerCase() === 'c') {
+                e.preventDefault();
+                navigate('/cart');
+            }
+        };
+        window.addEventListener('keydown', handleShortcuts);
+        return () => window.removeEventListener('keydown', handleShortcuts);
+    }, [navigate]);
 
     const toggleSearchVoice = () => {
         if (!('webkitSpeechRecognition' in window)) {
@@ -94,12 +118,14 @@ const Navbar = () => {
                 <form onSubmit={handleSearch} className="flex-1 max-w-lg flex items-center gap-2" role="search" aria-label="Product Search">
                     <div className="relative flex-1 flex items-center">
                         <input
+                            ref={searchInputRef}
                             type="text"
                             placeholder="Search by voice, text, or image..."
                             className="w-full py-3 px-4 pr-24 border border-gray-light rounded-lg text-text bg-white focus:outline-none focus:border-accent focus:ring-2 focus:ring-accent/10 transition-colors"
                             value={searchTerm}
                             onChange={(e) => setSearchTerm(e.target.value)}
                             aria-label="Search items"
+                            title="Product Search (Alt+S)"
                         />
                         <div className="absolute right-3 flex items-center gap-2">
                             {/* Voice Search Button */}
