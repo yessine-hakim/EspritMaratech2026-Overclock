@@ -22,7 +22,7 @@ const ResultsPage = () => {
     useEffect(() => {
         const fetchCategories = async () => {
             try {
-                const response = await api.get('/products/api/categories/');
+                const response = await api.get('/api/products/api/categories/');
                 setCategories(response.data);
             } catch (error) {
                 console.error('Error fetching categories:', error);

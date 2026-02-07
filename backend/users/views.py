@@ -67,3 +67,4 @@ class TranscribeAPIView(views.APIView):
         except Exception as e:
             print(f"Transcription error: {e}")
             return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
