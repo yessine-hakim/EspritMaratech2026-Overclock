@@ -1,6 +1,8 @@
 import React, { useState, useRef } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useNavigate, Link } from 'react-router-dom';
+import { FaMicrophone } from 'react-icons/fa';
+import api from '../api';
 
 const RegisterPage = () => {
     const { register } = useAuth();
@@ -18,11 +20,41 @@ const RegisterPage = () => {
         currency: 'TND'
     });
     const [error, setError] = useState('');
+    const [isRecording, setIsRecording] = useState(false);
+    const [voiceBlob, setVoiceBlob] = useState(null);
     const errorRef = useRef(null);
+    const mediaRecorderRef = useRef(null);
+    const audioChunksRef = useRef([]);
 
     const handleChange = (e) => {
         setFormData({ ...formData, [e.target.name]: e.target.value });
-        if (error) setError(''); // Clear error on change
+        if (error) setError('');
+    };
+
+    const handleVoiceEnroll = async () => {
+        try {
+            const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+            const mediaRecorder = new MediaRecorder(stream);
+            mediaRecorderRef.current = mediaRecorder;
+            audioChunksRef.current = [];
+
+            mediaRecorder.ondataavailable = (event) => audioChunksRef.current.push(event.data);
+            mediaRecorder.onstop = () => {
+                const blob = new Blob(audioChunksRef.current, { type: 'audio/wav' });
+                setVoiceBlob(blob);
+                stream.getTracks().forEach(track => track.stop());
+            };
+
+            setIsRecording(true);
+            mediaRecorder.start();
+            setTimeout(() => {
+                mediaRecorder.stop();
+                setIsRecording(false);
+            }, 3000);
+        } catch (err) {
+            console.error("Biometric capture failed", err);
+            setError("Could not access microphone for VoiceID.");
+        }
     };
 
     const handleSubmit = async (e) => {
@@ -36,6 +68,13 @@ const RegisterPage = () => {
         try {
             const { confirmPassword, ...apiData } = formData;
             await register(apiData);
+
+            if (voiceBlob) {
+                const voiceForm = new FormData();
+                voiceForm.append('audio', voiceBlob, 'enroll.wav');
+                await api.post('/api/voiceid/enroll/', voiceForm);
+            }
+
             navigate('/');
         } catch (err) {
             console.error(err);
@@ -196,6 +235,39 @@ const RegisterPage = () => {
                             value={formData.preferred_price_range_max}
                             onChange={handleChange}
                         />
+                    </div>
+
+                    <div className="md:col-span-2 space-y-4 mt-4">
+                        <h3 className="text-lg font-semibold text-primary border-b border-gray-100 pb-2">VoiceID Biometrics (Highly Recommended)</h3>
+                        <p className="text-sm text-gray-medium italic">Link your voice fingerprint to enable 100% voice login and secure high-value transfers.</p>
+                    </div>
+
+                    <div className="md:col-span-2 bg-gray-50 p-6 rounded-2xl border-2 border-dashed border-gray-200 flex flex-col items-center gap-4">
+                        {voiceBlob ? (
+                            <div className="flex items-center gap-3 text-accent font-bold">
+                                <div className="w-4 h-4 bg-accent rounded-full animate-ping" />
+                                Voice Signature Captured
+                                <button
+                                    type="button"
+                                    onClick={() => setVoiceBlob(null)}
+                                    className="text-xs text-red-500 underline ml-4"
+                                >
+                                    Remove and Re-record
+                                </button>
+                            </div>
+                        ) : (
+                            <>
+                                <button
+                                    type="button"
+                                    onClick={handleVoiceEnroll}
+                                    disabled={isRecording}
+                                    className={`px-8 py-3 rounded-xl font-bold transition-all flex items-center gap-3 ${isRecording ? 'bg-red-100 text-red-600' : 'bg-white text-accent hover:bg-accent hover:text-white border-2 border-accent'}`}
+                                >
+                                    <FaMicrophone /> {isRecording ? "Recording... Say 'My voice is my password'" : "Enroll Voice Signature"}
+                                </button>
+                                <p className="text-[10px] text-gray-400">Captures a 3-second biometric fingerprint</p>
+                            </>
+                        )}
                     </div>
 
                     <div className="md:col-span-2 mt-6">

@@ -168,28 +168,42 @@ const GlobalVoiceCommander = () => {
                 if (authStep === 'REG_BUDGET') {
                     const budget = parseFloat(rawValue.replace(/[^0-9.]/g, '')) || 100;
                     setAuthData({ ...authData, monthly_budget: budget });
-                    setAuthStep('REG_PASSWORD');
-                    speak("Almost done. Please choose a voice password.");
-                    return;
-                }
-                if (authStep === 'REG_PASSWORD') {
-                    setAuthData({ ...authData, password: rawValue, confirmPassword: rawValue });
-                    setAuthStep('REG_CONFIRM');
-                    speak(`Check your details. You are registering as ${authData.first_name}. Say 'Confirm registration' to finish.`);
+                    setAuthStep('REG_VOICE');
+                    speak("Got it. Now, for your security, let's link your unique voice fingerprint. Please say: 'My voice is my password' after the tone.");
+                    setTimeout(async () => {
+                        const blob = await recordBiometrics();
+                        if (blob) {
+                            setAuthData(prev => ({ ...prev, voiceBlob: blob }));
+                            speak("Voice signature captured. Say 'Confirm registration' to finish.");
+                            setAuthStep('REG_CONFIRM');
+                        } else {
+                            speak("Recording failed. Let's try once more.");
+                        }
+                    }, 3000);
                     return;
                 }
 
                 if (authStep === 'REG_CONFIRM') {
                     if (action === 'confirm' || processedTranscript.includes("confirm")) {
-                        speak("Creating your account now.");
+                        speak("Creating your secure voice-only account... please wait.");
                         try {
-                            const { confirmPassword, ...apiData } = authData;
-                            await register(apiData);
+                            const { voiceBlob, ...apiData } = authData;
+                            // Generate a random internal password since Django requires it
+                            const randomPass = Math.random().toString(36).slice(-12) + "V0ice!";
+                            await register({ ...apiData, password: randomPass, confirmPassword: randomPass });
+
+                            if (voiceBlob) {
+                                const formData = new FormData();
+                                formData.append('audio', voiceBlob, 'enroll.wav');
+                                await api.post('/api/voiceid/enroll/', formData);
+                            }
+
+                            speak(`Welcome ${authData.first_name}. Your account is ready. From now on, your voice is your only key.`);
                             setAuthStep(null);
                             setAuthData({});
                             navigate('/');
                         } catch (e) {
-                            speak("Registration failed.");
+                            speak("Registration failed. Please try again.");
                             setAuthStep(null);
                         }
                         return;
@@ -200,8 +214,24 @@ const GlobalVoiceCommander = () => {
             // --- AUTH TRIGGER HANDLER ---
             if (action === 'auth') {
                 if (target === 'login') {
-                    setAuthStep('LOGIN_EMAIL');
-                    speak("Please say your registered email address.");
+                    speak("Identifying your voice. Please say your enrollment phrase after the tone.");
+                    setTimeout(async () => {
+                        const blob = await recordBiometrics();
+                        if (blob) {
+                            const formData = new FormData();
+                            formData.append('audio', blob, 'ident.wav');
+                            try {
+                                const resp = await api.post('/api/voiceid/identify/', formData);
+                                if (resp.data.status === 'success') {
+                                    speak(`Welcome back ${resp.data.user.first_name}. You are now logged in.`);
+                                    // Refresh auth state (manually since we used session login on backend)
+                                    window.location.reload();
+                                }
+                            } catch (e) {
+                                speak("Voice not recognized. Please try again or use manual login.");
+                            }
+                        }
+                    }, 3000);
                     return;
                 }
                 if (target === 'register') {

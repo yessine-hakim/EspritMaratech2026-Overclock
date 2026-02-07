@@ -105,3 +105,54 @@ def verify_voice(request):
         "match": bool(IS_MATCH),
         "score": float(similarity)
     })
+
+@csrf_exempt
+@require_http_methods(["POST"])
+def identify_voice(request):
+    """
+    Search all enrolled voices to identify and log in the user.
+    """
+    from django.contrib.auth import login
+    
+    audio = request.FILES.get("audio")
+    if not audio:
+        return JsonResponse({"error": "No audio provided"}, status=400)
+        
+    current_embedding = extract_fingerprint(audio)
+    if not current_embedding:
+        return JsonResponse({"error": "Failed to extract fingerprint"}, status=500)
+    
+    current_embedding = np.array(current_embedding)
+    
+    # Search all enrollments
+    best_match = None
+    max_similarity = -1
+    
+    enrollments = VoiceEnrollment.objects.all()
+    for enrollment in enrollments:
+        stored_embedding = np.array(enrollment.embedding)
+        similarity = np.dot(stored_embedding, current_embedding)
+        
+        if similarity > max_similarity:
+            max_similarity = similarity
+            best_match = enrollment
+            
+    # conservative threshold for "who is this?"
+    if best_match and max_similarity > 0.90:
+        user = best_match.user
+        login(request, user)
+        return JsonResponse({
+            "status": "success",
+            "user": {
+                "id": user.id,
+                "email": user.email,
+                "first_name": user.first_name
+            },
+            "score": float(max_similarity)
+        })
+        
+    return JsonResponse({
+        "status": "failed",
+        "message": "Voice not recognized",
+        "best_score": float(max_similarity)
+    }, status=401)
