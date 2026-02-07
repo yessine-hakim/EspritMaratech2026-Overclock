@@ -1,6 +1,6 @@
 import os
 import json
-from typing import Any
+from typing import Any, Optional
 from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_http_methods
@@ -11,10 +11,11 @@ from pydantic import BaseModel, Field
 
 # Define the expected output structure for the AI
 class VoiceIntentOutput(BaseModel):
-    action: str = Field(description="The primary action: navigate, search, accessibility, banking, or chat")
-    target: str = Field(description="The specific target (e.g., 'cart', 'highContrast', 'laptop', 'balance')")
-    value: Any = Field(description="An optional value for the action (e.g., true/false for toggles, search query string, or font percentage)", default=None)
-    response: str = Field(description="A friendly verbal confirmation for the user (e.g., 'Opening your shopping cart now.')")
+    action: str = Field(description="Primary action: auth, navigate, search, cart, banking, status_check, confirm, cancel, chat")
+    target: str = Field(description="Specific target (e.g., 'login', 'balance', 'add', 'home')")
+    params: Optional[dict] = Field(description="Action parameters (e.g., {productId: 123, quantity: 2})", default=None)
+    value: Any = Field(description="Optional value for the action", default=None)
+    response: str = Field(description="Friendly verbal confirmation for the user")
 
 @csrf_exempt
 @require_http_methods(["POST"])
@@ -22,7 +23,6 @@ def classify_voice_intent(request):
     try:
         data = json.loads(request.body)
         transcript = data.get("transcript", "").strip()
-        product_id = data.get("productId") # Handled from frontend GlobalVoiceCommander
         
         if not transcript:
             return JsonResponse({"error": "No transcript provided"}, status=400)
@@ -41,37 +41,61 @@ def classify_voice_intent(request):
 
         prompt = ChatPromptTemplate.from_messages([
             ("system", """You are the AI Voice Brain for Pay4All, an inclusive shopping app.
-            Your job is to convert a user's voice transcript into a structured JSON command for the frontend.
+            Convert user voice transcripts into structured JSON commands.
 
-            VALID ACTIONS & TARGETS:
-            1. Action: 'navigate'
-               Targets: 'home', 'cart', 'banking', 'profile', 'login', 'results'
-            2. Action: 'search'
-               Target: The search query string (e.g., 'blue shoes')
-            3. Action: 'accessibility'
-               Targets: 'highContrast', 'fontSize', 'simplifiedMode' etc.
-            4. Action: 'banking'
-               Targets: 'balance', 'transactions', 'affordability', 'transfer'
-            5. Action: 'cart'
-               Targets: 'add', 'remove', 'view', 'checkout'
-            6. Action: 'status_check'
-               Target: 'affordability', 'budget_status', 'cart_status'
-               Explain: Use this for "Can I afford this?", "How is my budget?", "What's in my cart?".
-            7. Action: 'confirm'
-               Target: 'payment', 'transfer', 'generic', 'register'
-            8. Action: 'cancel'
-               Target: 'any'
-            9. Action: 'auth'
-               Targets: 'login', 'register', 'logout', 'credential_input'
-            10. Action: 'chat'
-               Target: 'general' (For general questions or conversation)
+            COMPLETE ACTION REFERENCE:
 
-            CONTEXTUAL GUIDANCE:
-            - If the user asks "Can I afford this?" or "Can I buy this?", set action='status_check' and target='affordability'.
-            - If the user asks about their remaining budget, set action='status_check' and target='budget_status'.
-            - If they ask about balance, action='banking' target='balance'.
+            1. AUTH (action='auth')
+               - target='login': User wants to log in
+               - target='register': User wants to register
+               - target='logout': User wants to log out
+               - Extract params: {email, password, username} when mentioned
 
-            Output valid JSON only. Response field is for verbal confirmation.
+            2. NAVIGATE (action='navigate')
+               - target: 'home', 'cart', 'banking', 'profile', 'login', 'register', 'results'
+
+            3. SEARCH (action='search')
+               - target: The search query (e.g., "milk", "blue shoes")
+               - params: {category, price_max} if mentioned
+
+            4. CART (action='cart')
+               - target='add': Add product to cart (extract productId if mentioned)
+               - target='remove': Remove from cart
+               - target='view': View cart
+               - target='clear': Clear cart
+               - target='checkout': Proceed to checkout
+
+            5. BANKING (action='banking')
+               - target='balance': Check balance
+               - target='transactions': View transactions
+               - target='transfer': Transfer money (extract {recipient, amount})
+
+            6. STATUS_CHECK (action='status_check')
+               - target='affordability': "Can I afford this?"
+               - target='budget_status': "How is my budget?"
+               - target='cart_status': "What's in my cart?"
+
+            7. CONFIRM (action='confirm')
+               - Responses: "yes", "yeah", "confirm", "ok", "proceed"
+               - target='generic'
+
+            8. CANCEL (action='cancel')
+               - Responses: "no", "cancel", "stop", "nevermind"
+               - target='generic'
+
+            9. CHAT (action='chat')
+               - target='general': General questions or conversation
+
+            PARAMETER EXTRACTION:
+            - Extract numbers, product names, emails, amounts from transcript
+            - Put them in params dict
+            - Example: "add 2 milk" → params: {productName: "milk", quantity: 2}
+
+            FOLLOW-UP DETECTION:
+            - Single word responses like "yes", "no" → confirm/cancel
+            - "the first one", "number 2" → params: {selection: 0/1}
+
+            Output ONLY valid JSON. Be concise in response field.
             """),
             ("human", "User said: {transcript}"),
         ])
@@ -79,38 +103,99 @@ def classify_voice_intent(request):
         chain = prompt | llm | parser
         result = chain.invoke({"transcript": transcript})
 
-        # --- ADVANCED: Contextual Data Binding ---
-        # If the query is about status/affordability, we need REAL data.
-        # We'll invoke the Recommendation Graph to get a data-backed response.
-        if result['action'] == 'status_check' or (result['action'] == 'banking' and result['target'] == 'balance'):
-            from .graph import create_recommendation_graph
-            from cart.models import Cart
-            from banking.models import BankAccount
-            
-            # Fetch real data for context
-            account = BankAccount.objects.filter(user=request.user).first()
-            cart = Cart.objects.filter(user=request.user, is_active=True).first()
-            
-            graph = create_recommendation_graph()
-            state = {
-                "query": transcript,
-                "user_profile": {"user_obj": request.user},
-                "cart_total": float(cart.total_price) if cart else 0,
-                "bank_data": {"balance": float(account.balance) if account else 0},
-                "intent": "BANKING" if result['action'] == 'banking' else "STATUS"
-            }
-            
-            # Add product_id if mentioned or contextually provided
-            if product_id:
-                state["visual_ids"] = [product_id] # We use visual_ids as a general ID transport for now or add a new field
-            
-            # Run graph to get an intelligent, data-backed explanation
-            graph_result = graph.invoke(state)
-            if graph_result.get('explanation'):
-                result['response'] = graph_result['explanation']
-        
+        # Ensure params is a dict
+        if result.get('params') is None:
+            result['params'] = {}
+
+        # Handle status checks with real data
+        if result['action'] == 'status_check':
+            result = _enrich_status_check(result, request)
+
+        # Handle banking balance with real data
+        if result['action'] == 'banking' and result['target'] == 'balance':
+            result = _enrich_balance_check(result, request)
+
         return JsonResponse(result)
 
     except Exception as e:
         print(f"Voice Intent AI Error: {e}")
-        return JsonResponse({"error": str(e)}, status=500)
+        import traceback
+        traceback.print_exc()
+        return JsonResponse({
+            "action": "chat",
+            "target": "error",
+            "response": "Sorry, I didn't understand that. Can you try again?",
+            "error": str(e)
+        }, status=200)  # Return 200 to avoid breaking voice flow
+
+
+def _enrich_status_check(result, request):
+    """Enrich status check with real user data"""
+    try:
+        from cart.models import Cart
+        from banking.models import BankAccount
+
+        target = result['target']
+
+        if target == 'affordability':
+            # Get cart total and balance
+            cart = Cart.objects.filter(user=request.user, is_active=True).first()
+            account = BankAccount.objects.filter(user=request.user).first()
+            
+            cart_total = float(cart.total_price) if cart else 0
+            balance = float(account.balance) if account else 0
+            
+            can_afford = balance >= cart_total
+            
+            result['params'] = {
+                'amount': cart_total,
+                'balance': balance,
+                'canAfford': can_afford
+            }
+            
+            if can_afford:
+                result['response'] = f"Yes, you can afford this. Your balance is {balance} TND and your cart total is {cart_total} TND."
+            else:
+                shortage = cart_total - balance
+                result['response'] = f"No, you cannot afford this. Your balance is {balance} TND but your cart is {cart_total} TND. You are short by {shortage} TND."
+
+        elif target == 'budget_status':
+            # Get budget info
+            account = BankAccount.objects.filter(user=request.user).first()
+            if account:
+                result['response'] = f"Your monthly budget is {account.monthly_budget} TND. You have {account.balance} TND remaining."
+
+        elif target == 'cart_status':
+            # Get cart info
+            cart = Cart.objects.filter(user=request.user, is_active=True).first()
+            if cart:
+                item_count = cart.items.count()
+                result['response'] = f"You have {item_count} item(s) in your cart. Total: {cart.total_price} TND."
+            else:
+                result['response'] = "Your cart is empty."
+
+    except Exception as e:
+        print(f"Error enriching status check: {e}")
+        # Return original result if enrichment fails
+        pass
+
+    return result
+
+
+def _enrich_balance_check(result, request):
+    """Enrich balance check with real data"""
+    try:
+        from banking.models import BankAccount
+        
+        account = BankAccount.objects.filter(user=request.user).first()
+        if account:
+            balance = float(account.balance)
+            result['params'] = {'balance': balance}
+            result['response'] = f"Your current balance is {balance} TND."
+        else:
+            result['response'] = "No bank account found."
+    except Exception as e:
+        print(f"Error enriching balance check: {e}")
+        pass
+
+    return result
