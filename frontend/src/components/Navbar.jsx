@@ -3,7 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useCart } from '../context/CartContext';
 import { useA11y } from '../context/A11yContext';
-import { FaShoppingCart, FaUser, FaSignOutAlt, FaSearch, FaCamera, FaEye, FaTextHeight, FaUniversalAccess, FaMicrophone } from 'react-icons/fa';
+import { FaShoppingCart, FaUser, FaSignOutAlt, FaSearch, FaCamera, FaEye, FaTextHeight, FaUniversalAccess, FaMicrophone, FaCheck } from 'react-icons/fa';
 import AccessibilityModal from './AccessibilityModal';
 import api from '../api';
 
@@ -75,30 +75,38 @@ const Navbar = () => {
         }
     };
 
-    const handleSearch = (e) => {
+    const handleSearch = async (e) => {
         e.preventDefault();
-        // If image is selected, we should ideally handle visual search here or redirect
-        // For now, let's just text search if no image logic in this simple navbar
-        if (searchTerm.trim()) {
-            navigate(`/results?q=${searchTerm}`);
-        }
-    };
 
-    const handleImageUpload = async (e) => {
-        const file = e.target.files[0];
-        if (file) {
+        if (selectedImage) {
             const formData = new FormData();
-            formData.append('image', file);
+            formData.append('image', selectedImage);
+            if (searchTerm.trim()) {
+                formData.append('q', searchTerm);
+            }
 
             try {
+                // Show loading state or feedback here if needed
                 const response = await api.post('/api/products/api/visual-search/', formData, {
                     headers: { 'Content-Type': 'multipart/form-data' }
                 });
+                // Reset state
+                setSelectedImage(null);
+                setSearchTerm('');
                 navigate('/results', { state: { products: response.data.results, explanation: response.data.explanation } });
             } catch (error) {
                 console.error("Visual search failed", error);
                 alert("Visual search failed. Please try again.");
             }
+        } else if (searchTerm.trim()) {
+            navigate(`/results?q=${searchTerm}`);
+        }
+    };
+
+    const handleImageUpload = (e) => {
+        const file = e.target.files[0];
+        if (file) {
+            setSelectedImage(file);
         }
     };
 
@@ -147,8 +155,8 @@ const Navbar = () => {
                             </button>
 
                             {/* Camera Icon Overlay or Button */}
-                            <label htmlFor="nav-image-upload" className="text-gray-400 hover:text-accent cursor-pointer transition-colors p-1" title="Search by image">
-                                <FaCamera size={18} aria-hidden="true" />
+                            <label htmlFor="nav-image-upload" className={`cursor-pointer transition-colors p-1 ${selectedImage ? 'text-green-500' : 'text-gray-400 hover:text-accent'}`} title={selectedImage ? "Image selected" : "Search by image"}>
+                                {selectedImage ? <FaCheck size={18} aria-hidden="true" /> : <FaCamera size={18} aria-hidden="true" />}
                                 <span className="sr-only">Upload image for visual search</span>
                             </label>
                             <input

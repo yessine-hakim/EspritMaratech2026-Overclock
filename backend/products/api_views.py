@@ -37,7 +37,14 @@ class ProductDetailAPIView(generics.RetrieveAPIView):
                 query=product.pk,
                 limit=5
             )
-            sim_ids = [point.id for point in discovery_results.points if point.id != product.pk]
+            sim_ids = []
+            for point in discovery_results.points:
+                if point.id != product.pk:
+                    try:
+                        sim_ids.append(int(point.id))
+                    except (ValueError, TypeError):
+                        continue
+            
             if sim_ids:
                 preserved = Case(*[When(pk=pk_val, then=pos) for pos, pk_val in enumerate(sim_ids)])
                 similar_products = Product.objects.filter(pk__in=sim_ids).order_by(preserved)[:4]
@@ -90,10 +97,12 @@ class VisualSearchAPIView(views.APIView):
                 limit=50
             )
             
-            candidate_ids = [point.id for point in visual_results.points]
-            
-            # Simple retrieval for now, bypassing the complex re-ranking to ensuring JSON response speed
-            # Can add back strict re-ranking if needed
+            candidate_ids = []
+            for point in visual_results.points:
+                try:
+                    candidate_ids.append(int(point.id))
+                except (ValueError, TypeError):
+                    continue
             
             if candidate_ids:
                 preserved = Case(*[When(pk=pk, then=pos) for pos, pk in enumerate(candidate_ids)])
@@ -198,7 +207,18 @@ class ResultsAPIView(views.APIView):
                 embedding=embeddings,
             )
             search_results = vector_store.similarity_search_with_score(query, k=50)
-            ids = [doc.metadata.get('id') for doc, score in search_results]
+            ids = []
+            for doc, score in search_results:
+                doc_id = doc.metadata.get('id')
+                if doc_id:
+                    try:
+                        ids.append(int(doc_id))
+                    except (ValueError, TypeError):
+                        continue
+            
+            if not ids:
+                return Product.objects.none()
+
             preserved = Case(*[When(pk=pk, then=pos) for pos, pk in enumerate(ids)])
             return Product.objects.filter(pk__in=ids).order_by(preserved)
         except Exception:

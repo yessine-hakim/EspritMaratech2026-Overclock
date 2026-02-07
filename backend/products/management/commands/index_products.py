@@ -48,12 +48,39 @@ class Command(BaseCommand):
             doc = Document(page_content=page_content, metadata=metadata)
             documents.append(doc)
             
+        from qdrant_client.models import PointStruct
+        
         if documents:
             self.stdout.write(f'Indexing {len(documents)} vectors... This may take a while.')
-            # Batch size is handled by QdrantVectorStore internally usually, but let's just add all
+            
+            # 1. Generate embeddings
+            texts = [doc.page_content for doc in documents]
             try:
-                vector_store.add_documents(documents)
-                self.stdout.write(self.style.SUCCESS(f'Successfully indexed {len(documents)} products!'))
+                self.stdout.write("Generating embeddings...")
+                embeddings_list = embeddings.embed_documents(texts)
+                
+                points = []
+                for i, doc in enumerate(documents):
+                    points.append(PointStruct(
+                        id=doc.metadata["id"],  # Explicitly use Product ID
+                        vector=embeddings_list[i],
+                        payload=doc.metadata
+                    ))
+
+                # 2. Upsert to Qdrant
+                batch_size = 100
+                total_points = len(points)
+                
+                for i in range(0, total_points, batch_size):
+                    batch = points[i:i + batch_size]
+                    client.upsert(
+                        collection_name=PRODUCTS_COLLECTION,
+                        points=batch
+                    )
+                    self.stdout.write(f"Upserted batch {i}-{min(i+batch_size, total_points)}")
+                
+                self.stdout.write(self.style.SUCCESS(f'Successfully indexed {len(documents)} products with integer IDs!'))
+                
             except Exception as e:
                 self.stdout.write(self.style.ERROR(f'Error indexing: {str(e)}'))
         else:

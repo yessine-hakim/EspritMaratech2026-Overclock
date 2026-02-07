@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { FaMicrophone, FaPaperPlane, FaRobot, FaTimes, FaCamera } from 'react-icons/fa';
+import { FaMicrophone, FaPaperPlane, FaRobot, FaTimes, FaCamera, FaCheck } from 'react-icons/fa';
 import api from '../api';
 import { useAuth } from '../context/AuthContext';
 import { Link } from 'react-router-dom';
@@ -15,6 +15,7 @@ const Chatbot = () => {
     const messagesEndRef = useRef(null);
     const { user } = useAuth();
     const fileInputRef = useRef(null);
+    const [selectedImage, setSelectedImage] = useState(null);
 
     const scrollToBottom = () => {
         messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -25,106 +26,78 @@ const Chatbot = () => {
     }, [messages, isOpen]);
 
     const handleSend = async () => {
-        if (!input.trim()) return;
+        if (!input.trim() && !selectedImage) return;
 
-        const userMessage = { type: 'user', content: input };
+        const userMessage = { type: 'user', content: input || (selectedImage ? "Sent an image..." : "") };
         setMessages(prev => [...prev, userMessage]);
+
+        const currentInput = input;
+        const currentImage = selectedImage;
+
         setInput('');
+        setSelectedImage(null);
         setIsLoading(true);
 
-        try {
-            const payload = {
-                query: input,
-                user_id: user?.id
-            };
+        if (currentImage) {
+            // Handle image + optional text
+            const formData = new FormData();
+            formData.append('image', currentImage);
+            if (currentInput) formData.append('query', currentInput);
+            if (user?.id) formData.append('user_id', user.id);
 
-            const res = await api.post('/api/recommendations/ask/', payload);
-
-            console.log("Chatbot API response:", res.data);
-            console.log("Recommendations count:", res.data.recommendations?.length || 0);
-            if (res.data.recommendations?.length > 0) {
-                console.log("First recommendation:", res.data.recommendations[0]);
-                console.log("All recommendations:", res.data.recommendations);
-            } else {
-                console.warn("No recommendations in response!");
+            try {
+                const res = await api.post('/api/recommendations/ask/', formData, {
+                    headers: { 'Content-Type': 'multipart/form-data' }
+                });
+                await processBotResponse(res.data);
+            } catch (error) {
+                console.error("Chat error", error);
+                setMessages(prev => [...prev, { type: 'bot', content: "Sorry, I encountered an error processing your image." }]);
+                setIsLoading(false);
             }
+        } else {
+            // Handle text only
 
-            // Ensure recommendations is an array
-            const recommendations = Array.isArray(res.data.recommendations) 
-                ? res.data.recommendations 
-                : [];
+            try {
+                const payload = {
+                    query: input,
+                    user_id: user?.id
+                };
 
-            const botResponse = {
-                type: 'bot',
-                content: res.data.explanation || "Here are some recommendations based on your request.",
-                recommendations: recommendations
-            };
+                const res = await api.post('/api/recommendations/ask/', payload);
+                await processBotResponse(res.data);
 
-            console.log("Bot response with recommendations:", botResponse);
-            console.log("Recommendations array length:", botResponse.recommendations.length);
-            console.log("Full bot response object:", JSON.stringify(botResponse, null, 2));
-
-            setMessages(prev => {
-                const newMessages = [...prev, botResponse];
-                console.log("Updated messages array:", newMessages);
-                console.log("Last message in array:", newMessages[newMessages.length - 1]);
-                return newMessages;
-            });
-
-            // Voice synthesis of the answer
-            speak(botResponse.content);
-
-        } catch (error) {
-            console.error("Chat error", error);
-            setMessages(prev => [...prev, { type: 'bot', content: "Sorry, I encountered an error providing recommendations." }]);
-        } finally {
-            setIsLoading(false);
+            } catch (error) {
+                console.error("Chat error", error);
+                setMessages(prev => [...prev, { type: 'bot', content: "Sorry, I encountered an error providing recommendations." }]);
+            } finally {
+                setIsLoading(false);
+            }
         }
     };
 
-    const handleImageUpload = async (e) => {
+    const processBotResponse = async (data) => {
+        console.log("Chatbot API response:", data);
+
+        // Ensure recommendations is an array
+        const recommendations = Array.isArray(data.recommendations)
+            ? data.recommendations
+            : [];
+
+        const botResponse = {
+            type: 'bot',
+            content: data.explanation || "Here are some recommendations based on your request.",
+            recommendations: recommendations
+        };
+
+        setMessages(prev => [...prev, botResponse]);
+        speak(botResponse.content);
+    };
+
+    const handleImageUpload = (e) => {
         const file = e.target.files[0];
-        if (!file) return;
-
-        const userMessage = { type: 'user', content: "Sent an image for visual search..." };
-        setMessages(prev => [...prev, userMessage]);
-        setIsLoading(true);
-
-        const formData = new FormData();
-        formData.append('image', file);
-        if (user?.id) formData.append('user_id', user.id);
-
-        try {
-            // Note: The backend API needs to support multipart/form-data for this endpoint
-            // If strictly JSON is expected by standard view, we might need a separate endpoint or adjustments
-            // Based on analysis, api.recommend handles request.FILES
-            const res = await api.post('/api/recommendations/ask/', formData, {
-                headers: { 'Content-Type': 'multipart/form-data' }
-            });
-
-            console.log("Image search API response:", res.data);
-            console.log("Image search recommendations count:", res.data.recommendations?.length || 0);
-            
-            // Ensure recommendations is an array
-            const recommendations = Array.isArray(res.data.recommendations) 
-                ? res.data.recommendations 
-                : [];
-
-            const botResponse = {
-                type: 'bot',
-                content: res.data.explanation || "I found these similar products for you.",
-                recommendations: recommendations
-            };
-            
-            console.log("Image search bot response:", botResponse);
-            setMessages(prev => [...prev, botResponse]);
-            speak(botResponse.content);
-
-        } catch (error) {
-            console.error("Image search error", error);
-            setMessages(prev => [...prev, { type: 'bot', content: "Sorry, I couldn't process that image." }]);
-        } finally {
-            setIsLoading(false);
+        if (file) {
+            setSelectedImage(file);
         }
     };
 
@@ -189,7 +162,7 @@ const Chatbot = () => {
                         {messages.map((msg, idx) => {
                             const hasRecommendations = msg.recommendations && Array.isArray(msg.recommendations) && msg.recommendations.length > 0;
                             console.log(`Message ${idx} - Type: ${msg.type}, Has recommendations:`, hasRecommendations, "Count:", msg.recommendations?.length);
-                            
+
                             return (
                                 <div key={idx} className={`mb-4 ${msg.type === 'user' ? 'text-right' : 'text-left'}`}>
                                     <div className={`inline-block p-3 rounded-lg max-w-[85%] ${msg.type === 'user'
@@ -234,7 +207,7 @@ const Chatbot = () => {
                                             </div>
                                         </div>
                                     )}
-                                    
+
                                     {/* Fallback: Show recommendations as text if they exist but can't render */}
                                     {msg.type === 'bot' && msg.recommendations && !hasRecommendations && (
                                         <div className="mt-2 p-2 bg-yellow-50 border border-yellow-200 rounded text-xs">
@@ -244,12 +217,12 @@ const Chatbot = () => {
                                             </pre>
                                         </div>
                                     )}
-                                    
+
                                     {/* Debug info in development */}
                                     {process.env.NODE_ENV === 'development' && msg.type === 'bot' && (
                                         <div className="mt-1 text-xs text-gray-400">
-                                            Debug: recommendations={msg.recommendations?.length || 0}, 
-                                            isArray={Array.isArray(msg.recommendations)}, 
+                                            Debug: recommendations={msg.recommendations?.length || 0},
+                                            isArray={Array.isArray(msg.recommendations)},
                                             hasRecommendations={hasRecommendations}
                                         </div>
                                     )}
@@ -275,10 +248,10 @@ const Chatbot = () => {
                         <div className="flex items-center gap-2 relative">
                             <button
                                 onClick={() => fileInputRef.current?.click()}
-                                className="text-gray-400 hover:text-accent p-2"
-                                title="Upload Image"
+                                className={`p-2 transition-colors ${selectedImage ? 'text-green-500' : 'text-gray-400 hover:text-accent'}`}
+                                title={selectedImage ? "Image selected" : "Upload Image"}
                             >
-                                <FaCamera />
+                                {selectedImage ? <FaCheck /> : <FaCamera />}
                             </button>
                             <input
                                 type="file"
