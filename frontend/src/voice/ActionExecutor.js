@@ -132,20 +132,126 @@ class ActionExecutor {
      * Handle search
      */
     async handleSearch(query, params) {
-        const result = await ProductService.search(query, params);
+        // Extract category and price from query if not in params
+        const category = params.category || this.extractCategory(query);
+        const maxPrice = params.price_max || this.extractPrice(query);
+        const intent = params.intent || 'search';
 
-        if (result.success && result.products) {
-            // Store products in context for follow-up
-            this.conversationState.updateContext({
-                lastSearchQuery: query,
-                lastProducts: result.products
-            });
+        console.log('[ActionExecutor] Search params:', { query, category, maxPrice, intent });
 
-            // Navigate to results page
-            this.navigate(`/results?q=${encodeURIComponent(query)}`);
+        // Build search URL with filters
+        const searchParams = new URLSearchParams();
+
+        if (category) {
+            searchParams.set('category', category);
+        } else if (query) {
+            searchParams.set('q', query);
         }
 
-        return result;
+        if (maxPrice) {
+            searchParams.set('max_price', maxPrice);
+        }
+
+        // Navigate to results page with filters
+        const url = `/results?${searchParams.toString()}`;
+        console.log('[ActionExecutor] Navigating to:', url);
+        this.navigate(url);
+
+        // Store in context for follow-up
+        this.conversationState.updateContext({
+            lastSearchQuery: query,
+            lastCategory: category,
+            lastMaxPrice: maxPrice
+        });
+
+        // Build response message
+        let message = 'Searching for ';
+        if (category) {
+            message += category;
+        } else {
+            message += query;
+        }
+        if (maxPrice) {
+            message += ` under ${maxPrice} TND`;
+        }
+
+        return {
+            success: true,
+            message: message,
+            data: { category, maxPrice, url }
+        };
+    }
+
+    /**
+     * Extract product category from natural language
+     */
+    extractCategory(query) {
+        const lower = query.toLowerCase();
+
+        // Common product categories
+        const categories = {
+            'yogurt': ['yogurt', 'yogurts', 'yoghurt', 'yoghurts'],
+            'milk': ['milk', 'dairy milk'],
+            'cheese': ['cheese', 'cheeses'],
+            'bread': ['bread', 'breads', 'baguette'],
+            'eggs': ['egg', 'eggs'],
+            'butter': ['butter'],
+            'cream': ['cream'],
+            'juice': ['juice', 'juices'],
+            'water': ['water', 'mineral water'],
+            'soda': ['soda', 'soft drink', 'pop'],
+            'coffee': ['coffee'],
+            'tea': ['tea'],
+            'snacks': ['snack', 'snacks', 'chips'],
+            'fruits': ['fruit', 'fruits', 'apple', 'banana', 'orange'],
+            'vegetables': ['vegetable', 'vegetables', 'veggie', 'veggies'],
+            'meat': ['meat', 'beef', 'chicken', 'pork'],
+            'fish': ['fish', 'seafood'],
+            'pasta': ['pasta', 'spaghetti', 'noodles'],
+            'rice': ['rice'],
+            'cereal': ['cereal', 'cereals']
+        };
+
+        // Check each category
+        for (const [category, keywords] of Object.entries(categories)) {
+            for (const keyword of keywords) {
+                if (lower.includes(keyword)) {
+                    console.log('[ActionExecutor] Detected category:', category);
+                    return category;
+                }
+            }
+        }
+
+        return null;
+    }
+
+    /**
+     * Extract price constraint from natural language
+     */
+    extractPrice(query) {
+        const lower = query.toLowerCase();
+
+        // Match patterns like "under 50", "less than 100", "below 75"
+        const patterns = [
+            /under\s+\$?(\d+)/i,
+            /less\s+than\s+\$?(\d+)/i,
+            /below\s+\$?(\d+)/i,
+            /max\s+\$?(\d+)/i,
+            /maximum\s+\$?(\d+)/i,
+            /cheaper\s+than\s+\$?(\d+)/i,
+            /\$?(\d+)\s+or\s+less/i
+        ];
+
+        for (const pattern of patterns) {
+            const match = query.match(pattern);
+            if (match) {
+                const price = parseInt(match[1]);
+                console.log('[ActionExecutor] Detected price constraint:', price);
+                return price;
+            }
+        }
+
+        return null;
     }
 
     /**

@@ -59,7 +59,7 @@ const VoiceController = () => {
                 if (started) {
                     setIsListening(true);
                     // Welcome message
-                    voiceIO.speak("Voice assistant ready. Say help for available commands, or start speaking your request.");
+                    voiceIO.speak("Voice assistant ready. You can say commands like: show me yogurts, or yogurts under 50 dollars.");
                 } else {
                     console.warn('[VoiceController] Failed to auto-start voice');
                 }
@@ -80,24 +80,38 @@ const VoiceController = () => {
     const handleVoiceInput = async (transcript) => {
         console.log('[VoiceController] Voice input:', transcript);
         setLastCommand(transcript);
-        setIsProcessing(true);
-        setError(null); // Clear previous errors
 
         const voiceIO = voiceIORef.current;
         const conversationState = conversationStateRef.current;
         const confirmationHandler = confirmationHandlerRef.current;
         const actionExecutor = actionExecutorRef.current;
 
+        // Check for wake word (but process anyway for now - TEMPORARY FIX)
+        const wakeWordResult = voiceIO.detectWakeWord(transcript);
+
+        let command = transcript;
+        if (wakeWordResult.detected && wakeWordResult.command) {
+            // Use cleaned command if wake word detected
+            command = wakeWordResult.command;
+            console.log('[VoiceController] Wake word detected, using command:', command);
+        } else {
+            // Process anyway (wake word optional for now)
+            console.log('[VoiceController] Processing without wake word (optional mode)');
+        }
+
+        setIsProcessing(true);
+        setError(null);
+
         try {
             // Add to conversation history
             conversationState.addToHistory({
                 role: 'user',
-                content: transcript
+                content: command
             });
 
             // Check if awaiting confirmation
             if (conversationState.isAwaitingConfirmation()) {
-                const followUp = conversationState.handleFollowUp(transcript);
+                const followUp = conversationState.handleFollowUp(command);
 
                 if (followUp) {
                     if (followUp.type === 'confirm' || followUp.type === 'cancel') {
@@ -109,9 +123,9 @@ const VoiceController = () => {
             }
 
             // Parse intent via backend
-            console.log('[VoiceController] Sending to backend:', transcript);
+            console.log('[VoiceController] Sending to backend:', command);
             const intentResponse = await api.post('/api/recommendations/voice-intent/', {
-                transcript
+                transcript: command
             });
 
             const intent = intentResponse.data;

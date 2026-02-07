@@ -61,8 +61,28 @@ def classify_voice_intent(request):
                    - target: 'home', 'cart', 'banking', 'profile', 'login', 'register', 'results'
 
                 3. SEARCH (action='search')
-                   - target: The search query (e.g., "milk", "blue shoes")
-                   - params: category, price_max if mentioned
+                   - target: The search query or product category
+                   - params: Extract category, price_max, and intent
+                   
+                   Category Detection:
+                   - Look for product names: yogurt, milk, cheese, bread, eggs, etc.
+                   - Extract to params.category
+                   
+                   Price Constraints:
+                   - Patterns: "under X", "less than X", "below X", "max X"
+                   - Extract to params.price_max
+                   
+                   Intent Recognition:
+                   - "buy", "purchase" → params.intent = 'buy'
+                   - "show", "browse", "see" → params.intent = 'browse'
+                   - Default → params.intent = 'search'
+                   
+                   Examples:
+                   - "I want to buy yogurts" → action='search', target='yogurts', params={'category': 'yogurt', 'intent': 'buy'}
+                   - "yogurts under $50" → action='search', target='yogurts', params={'category': 'yogurt', 'price_max': 50}
+                   - "show me milk products" → action='search', target='milk', params={'category': 'milk', 'intent': 'browse'}
+                   - "bread less than 20" → action='search', target='bread', params={'category': 'bread', 'price_max': 20}
+                   - "buy cheese under 100 TND" → action='search', target='cheese', params={'category': 'cheese', 'price_max': 100, 'intent': 'buy'}
 
                 4. CART (action='cart')
                    - target='add': Add product to cart (extract productId if mentioned)

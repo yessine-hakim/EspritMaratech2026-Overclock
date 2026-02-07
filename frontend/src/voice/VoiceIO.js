@@ -12,6 +12,43 @@ class VoiceIO {
         this.onErrorCallback = null;
         this.minConfidence = 0.5; // Confidence threshold (0.0 - 1.0)
         this.minTranscriptLength = 2; // Minimum characters
+        this.wakeWord = 'assistant'; // Wake word for activation
+        this.wakeWords = ['assistant', 'hey assistant', 'ok assistant']; // Alternative wake words
+    }
+
+    /**
+     * Detect wake word in transcript and extract command
+     * @param {string} transcript - The full transcript
+     * @returns {Object} - {detected: boolean, command: string|null}
+     */
+    detectWakeWord(transcript) {
+        const lower = transcript.toLowerCase().trim();
+
+        // Check each wake word variant
+        for (const wakeWord of this.wakeWords) {
+            const index = lower.indexOf(wakeWord);
+            if (index !== -1) {
+                // Extract command after wake word
+                const commandStart = index + wakeWord.length;
+                const command = transcript.substring(commandStart).trim();
+
+                // Remove common filler words at start
+                const cleanCommand = command
+                    .replace(/^(,|please|could you|can you|i want to|i want|i'd like to|i'd like)\s*/i, '')
+                    .trim();
+
+                console.log('[VoiceIO] Wake word detected:', wakeWord);
+                console.log('[VoiceIO] Extracted command:', cleanCommand);
+
+                return {
+                    detected: true,
+                    command: cleanCommand || null,
+                    wakeWord: wakeWord
+                };
+            }
+        }
+
+        return { detected: false, command: null, wakeWord: null };
     }
 
     /**
