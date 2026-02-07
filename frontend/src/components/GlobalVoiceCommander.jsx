@@ -14,6 +14,15 @@ const GlobalVoiceCommander = () => {
     const [authStep, setAuthStep] = useState(null); // LOGIN_..., REG_..., ENROLL_VOICE, VERIFY_VOICE
     const [authData, setAuthData] = useState({});
     const [isRecordingBiometrics, setIsRecordingBiometrics] = useState(false);
+    const [isThinking, setIsThinking] = useState(false);
+    const [isConversational, setIsConversational] = useState(false);
+    const [aiResponse, setAiResponse] = useState('');
+
+    // Refs for synchronous access to latest state (prevents stale closures)
+    const isHandsFreeRef = useRef(true);
+    const isConversationalRef = useRef(false);
+    const isThinkingRef = useRef(false);
+    const conversationalTimeoutRef = useRef(null);
 
     const navigate = useNavigate();
     const location = useLocation();
@@ -22,6 +31,11 @@ const GlobalVoiceCommander = () => {
     const recognitionRef = useRef(null);
     const mediaRecorderRef = useRef(null);
     const audioChunksRef = useRef([]);
+
+    // Sync refs with state
+    useEffect(() => { isHandsFreeRef.current = isHandsFree; }, [isHandsFree]);
+    useEffect(() => { isConversationalRef.current = isConversational; }, [isConversational]);
+    useEffect(() => { isThinkingRef.current = isThinking; }, [isThinking]);
 
     const {
         speak,
@@ -69,20 +83,44 @@ const GlobalVoiceCommander = () => {
         });
     };
 
+    const startConversationalMode = () => {
+        setIsConversational(true);
+        isConversationalRef.current = true;
+        if (conversationalTimeoutRef.current) clearTimeout(conversationalTimeoutRef.current);
+        conversationalTimeoutRef.current = setTimeout(() => {
+            setIsConversational(false);
+            isConversationalRef.current = false;
+        }, 12000); // 12 seconds of follow-up window
+    };
+
     const processCommand = useCallback(async (text) => {
         const transcript = text.toLowerCase().trim();
         if (!transcript) return;
 
         let processedTranscript = transcript;
-        if (isHandsFree) {
-            if (!transcript.includes("hey assistant") && !transcript.includes("assistant")) {
+        const hasWakeWord = transcript.includes("hey assistant") || transcript.includes("assistant");
+
+        // Use refs to avoid stale closures in recognition callbacks
+        if (isHandsFreeRef.current && !isConversationalRef.current && !hasWakeWord) {
+            return;
+        }
+
+        if (hasWakeWord) {
+            processedTranscript = transcript.replace(/hey assistant|assistant/, "").trim();
+            startConversationalMode();
+            if (!processedTranscript) {
+                speak("How can I help you?");
+                setIsThinking(false);
                 return;
             }
-            processedTranscript = transcript.replace(/hey assistant|assistant/, "").trim();
-            if (!processedTranscript) return;
+        } else if (isConversationalRef.current) {
+            startConversationalMode(); // Extend the window
         }
 
         console.log("Processing AI voice command:", processedTranscript);
+        setIsThinking(true);
+        isThinkingRef.current = true;
+        setLastCommand(processedTranscript);
 
         try {
             const productMatch = location.pathname.match(/\/product\/(\d+)/);
@@ -347,33 +385,85 @@ const GlobalVoiceCommander = () => {
                 }
             }
 
-            if (feedback && !pendingAction) speak(feedback);
+            if (action === 'status_check' || action === 'chat') {
+                setAiResponse(feedback);
+                setIsThinking(false);
+                if (feedback) speak(feedback);
+                return;
+            }
 
+            if (feedback && !pendingAction) {
+                setAiResponse(feedback);
+                speak(feedback);
+            }
+
+            setIsThinking(false);
         } catch (error) {
             console.error("Voice Command failed", error);
+            setIsThinking(false);
+            speak("I'm sorry, I'm having trouble processing that.");
         }
     }, [navigate, speak, isHandsFree, setHighContrast, setFontSize, setSimplifiedMode, location.pathname, addToCart, checkout, cart, pendingAction, authStep, authData, login, register, logout, recordBiometrics]);
 
+    const processCommandRef = useRef(null);
+    useEffect(() => {
+        processCommandRef.current = processCommand;
+    }, [processCommand]);
+
     useEffect(() => {
         if (!('webkitSpeechRecognition' in window)) return;
-        const recognition = new window.webkitSpeechRecognition();
-        recognition.continuous = true;
-        recognition.interimResults = false;
-        recognition.lang = 'en-US';
+
+        let recognition = recognitionRef.current;
+        if (!recognition) {
+            recognition = new window.webkitSpeechRecognition();
+            recognition.continuous = true;
+            recognition.interimResults = false;
+            recognition.lang = 'en-US';
+            recognitionRef.current = recognition;
+        }
+
         recognition.onstart = () => setIsListening(true);
+        recognition.onerror = (event) => {
+            console.error("Speech recognition error", event.error);
+            if (event.error === 'not-allowed') {
+                speak("Microphone access denied. Please check your browser settings.");
+            }
+        };
+
         recognition.onend = () => {
             setIsListening(false);
-            if (isHandsFree) try { recognition.start(); } catch (e) { }
+            // Auto-restart if hands-free is on
+            if (isHandsFree) {
+                try {
+                    recognition.start();
+                } catch (e) {
+                    // Already started or busy
+                }
+            }
         };
+
         recognition.onresult = (e) => {
             const transcript = e.results[e.results.length - 1][0].transcript;
             setLastCommand(transcript);
-            processCommand(transcript);
+            if (processCommandRef.current) {
+                processCommandRef.current(transcript);
+            }
         };
-        recognitionRef.current = recognition;
-        if (isHandsFree) try { recognition.start(); } catch (e) { }
-        return () => recognition.stop();
-    }, [isHandsFree, processCommand]);
+
+        if (isHandsFree) {
+            try {
+                recognition.start();
+            } catch (e) {
+                // Ignore "already started" errors
+            }
+        }
+
+        return () => {
+            if (!isHandsFree) {
+                recognition.stop();
+            }
+        };
+    }, [isHandsFree, speak]); // Removed processCommand from dependencies
 
     const toggleHandsFree = () => {
         setIsHandsFree(!isHandsFree);
@@ -431,9 +521,46 @@ const GlobalVoiceCommander = () => {
                 </div>
             )}
 
-            {lastCommand && (
-                <div className="bg-white/90 backdrop-blur-md px-4 py-2 rounded-2xl shadow-xl mt-4 border-2 border-accent/10 max-w-[200px]">
-                    <p className="text-xs font-bold text-primary italic truncate">"{lastCommand}"</p>
+            {/* AI INTELLIGENCE OVERLAY */}
+            {(aiResponse || lastCommand) && (
+                <div className={`fixed bottom-8 left-1/2 -translate-x-1/2 w-[90%] max-w-2xl bg-primary/95 backdrop-blur-2xl p-8 rounded-[32px] border-2 border-accent/20 shadow-2xl transition-all animate-slideUp z-[100] ${isThinking ? 'opacity-50' : 'opacity-100'}`}>
+                    <div className="space-y-4">
+                        {lastCommand && (
+                            <div className="flex items-start gap-4">
+                                <div className="w-8 h-8 rounded-full bg-accent/20 flex items-center justify-center text-accent shrink-0 mt-1">
+                                    <FaMicrophone size={14} />
+                                </div>
+                                <p className="text-gray-400 font-bold text-lg italic uppercase tracking-wider">
+                                    "{lastCommand}"
+                                </p>
+                            </div>
+                        )}
+
+                        {aiResponse && (
+                            <div className="flex items-start gap-4 pt-4 border-t border-white/10">
+                                <div className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center text-white shrink-0 mt-1">
+                                    <FaHeadset size={14} />
+                                </div>
+                                <p className="text-white text-2xl font-black leading-tight">
+                                    {aiResponse}
+                                </p>
+                            </div>
+                        )}
+
+                        <button
+                            onClick={() => { setAiResponse(''); setLastCommand(''); }}
+                            className="absolute top-4 right-4 text-white/40 hover:text-white"
+                        >
+                            ✕
+                        </button>
+                    </div>
+                    {isConversational && (
+                        <div className="mt-6 flex justify-center">
+                            <div className="h-1 bg-accent/30 rounded-full w-full overflow-hidden">
+                                <div className="h-full bg-accent animate-shrinkWidth" style={{ animationDuration: '12s' }} />
+                            </div>
+                        </div>
+                    )}
                 </div>
             )}
         </div>

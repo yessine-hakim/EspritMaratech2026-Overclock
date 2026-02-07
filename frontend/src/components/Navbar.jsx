@@ -189,11 +189,23 @@ const Navbar = () => {
                                 <FaUser size={24} />
                                 <span className="font-bold text-lg hidden xl:inline">{user.first_name || 'Profile'}</span>
                             </Link>
+
+                            <button
+                                onClick={logout}
+                                className="p-4 bg-red-50 text-red-600 rounded-2xl hover:bg-red-100 transition-all flex items-center gap-2 font-black"
+                                aria-label="Logout"
+                            >
+                                <FaSignOutAlt size={24} />
+                                <span className="hidden xl:inline">LOGOUT</span>
+                            </button>
                         </div>
                     ) : (
                         <div className="flex items-center gap-4">
-                            <Link to="/login" className="px-8 py-4 text-primary font-black text-lg hover:underline decoration-accent">
+                            <Link to="/login" className="px-6 py-3 text-primary font-black text-lg hover:underline decoration-accent">
                                 Login
+                            </Link>
+                            <Link to="/register" className="px-8 py-4 bg-accent text-white rounded-2xl font-black text-lg shadow-lg hover:bg-[#0e5a56] transition-all">
+                                Register
                             </Link>
                         </div>
                     )}

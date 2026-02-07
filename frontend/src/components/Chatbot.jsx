@@ -2,7 +2,9 @@ import React, { useState, useRef, useEffect } from 'react';
 import { FaMicrophone, FaPaperPlane, FaRobot, FaTimes, FaCamera, FaCheck } from 'react-icons/fa';
 import api from '../api';
 import { useAuth } from '../context/AuthContext';
-import { Link } from 'react-router-dom';
+import { useCart } from '../context/CartContext';
+import { useA11y } from '../context/A11yContext';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
 
 const Chatbot = () => {
     const [isOpen, setIsOpen] = useState(false);
@@ -15,31 +17,29 @@ const Chatbot = () => {
     const messagesEndRef = useRef(null);
     const { user } = useAuth();
     const fileInputRef = useRef(null);
-    const [selectedImage, setSelectedImage] = useState(null);
+    const navigate = useNavigate();
+    const location = useLocation();
+    const { addToCart, checkout, cart } = useCart();
+    const {
+        setHighContrast, setFontSize, setSimplifiedMode
+    } = useA11y();
 
-    const scrollToBottom = () => {
-        messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-    };
+    const handleSend = async (transcriptOverride) => {
+        const queryText = transcriptOverride || input;
+        if (!queryText.trim() && !selectedImage) return;
 
-    useEffect(() => {
-        scrollToBottom();
-    }, [messages, isOpen]);
-
-    const handleSend = async () => {
-        if (!input.trim() && !selectedImage) return;
-
-        const userMessage = { type: 'user', content: input || (selectedImage ? "Sent an image..." : "") };
+        const userMessage = { type: 'user', content: queryText || (selectedImage ? "Sent an image..." : "") };
         setMessages(prev => [...prev, userMessage]);
 
-        const currentInput = input;
+        const currentInput = queryText;
         const currentImage = selectedImage;
 
-        setInput('');
+        if (!transcriptOverride) setInput('');
         setSelectedImage(null);
         setIsLoading(true);
 
         if (currentImage) {
-            // Handle image + optional text
+            // ... image handling ...
             const formData = new FormData();
             formData.append('image', currentImage);
             if (currentInput) formData.append('query', currentInput);
@@ -53,23 +53,19 @@ const Chatbot = () => {
             } catch (error) {
                 console.error("Chat error", error);
                 setMessages(prev => [...prev, { type: 'bot', content: "Sorry, I encountered an error processing your image." }]);
+            } finally {
                 setIsLoading(false);
             }
         } else {
-            // Handle text only
-
             try {
-                const payload = {
-                    query: input,
+                const res = await api.post('/api/recommendations/ask/', {
+                    query: currentInput,
                     user_id: user?.id
-                };
-
-                const res = await api.post('/api/recommendations/ask/', payload);
+                });
                 await processBotResponse(res.data);
-
             } catch (error) {
                 console.error("Chat error", error);
-                setMessages(prev => [...prev, { type: 'bot', content: "Sorry, I encountered an error providing recommendations." }]);
+                setMessages(prev => [...prev, { type: 'bot', content: "Sorry, I encountered an error." }]);
             } finally {
                 setIsLoading(false);
             }
@@ -79,12 +75,7 @@ const Chatbot = () => {
     const processBotResponse = async (data) => {
         console.log("Chatbot API response:", data);
 
-        // Ensure recommendations is an array
-        let recommendations = Array.isArray(data.recommendations)
-            ? data.recommendations
-            : [];
-
-        // Sort by importance (similarity_score) descending
+        const recommendations = Array.isArray(data.recommendations) ? data.recommendations : [];
         recommendations.sort((a, b) => (b.similarity_score || 0) - (a.similarity_score || 0));
 
         const botResponse = {
@@ -95,6 +86,21 @@ const Chatbot = () => {
 
         setMessages(prev => [...prev, botResponse]);
         speak(botResponse.content);
+
+        // --- GLOBAL ACTION EXECUTION ---
+        const { action, target, value } = data;
+        if (action === 'navigate') {
+            const pathMap = { 'home': '/', 'cart': '/cart', 'banking': '/banking', 'profile': '/profile', 'login': '/login', 'results': '/results' };
+            if (pathMap[target]) navigate(pathMap[target]);
+        } else if (action === 'search') {
+            navigate(`/results?q=${target}`);
+        } else if (action === 'accessibility') {
+            if (target === 'highContrast') setHighContrast(!!value);
+            else if (target === 'fontSize') setFontSize(parseInt(value) || 100);
+            else if (target === 'simplifiedMode') setSimplifiedMode(!!value);
+        } else if (action === 'cart' && target === 'view') {
+            navigate('/cart');
+        }
     };
 
     const handleImageUpload = (e) => {
