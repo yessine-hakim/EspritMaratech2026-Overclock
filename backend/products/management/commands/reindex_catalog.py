@@ -1,4 +1,18 @@
 import os
+import sys
+
+# Add the project root to sys.path if running directly
+if __name__ == "__main__":
+    # Get the backend directory (project root)
+    project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), '../../../'))
+    if project_root not in sys.path:
+        sys.path.append(project_root)
+    
+    # Set Django settings
+    os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'pay4all.settings')
+    import django
+    django.setup()
+
 import json
 import tempfile
 import requests
@@ -87,10 +101,8 @@ class Command(BaseCommand):
 
         # 3. Import Data (Skip if sync-only or specific index flags)
         if not sync_only and not indexing_specific:
-            self.stdout.write("Importing Data from JSON files...")
-            self.import_data()
-            self.stdout.write("Cleaning and Normalizing imported data...")
-            self.clean_data()
+            self.stdout.write("Importing Data from JSONL (Delegating to import_products)...")
+            call_command('import_products')
         
         # 4. Index Text
         if not visual_only:
@@ -115,98 +127,4 @@ class Command(BaseCommand):
                 self.stdout.write(self.style.WARNING(f"    Qdrant call failed (Attempt {attempt+1}/{max_retries}): {e}"))
                 time.sleep(2 * (attempt + 1))  # Exponential backoff
         raise last_exception
-
-    def import_data(self):
-        from django.conf import settings
-        data_dir = settings.BASE_DIR / 'data'
-        
-        if not data_dir.exists():
-            self.stdout.write(self.style.ERROR(f"Data directory not found: {data_dir}"))
-            return
-
-        categories = {}
-        new_products = []
-        
-        files = [f for f in data_dir.iterdir() if f.suffix == '.json']
-        for file_path in files:
-            self.stdout.write(f"  Processing {file_path.name}...")
-            try:
-                with open(file_path, 'r', encoding='utf-8') as f:
-                    content = f.read().strip()
-                    if content.startswith('[') and content.endswith(']'):
-                        data = json.loads(content)
-                    else:
-                        f.seek(0)
-                        data = []
-                        for line in f:
-                            if line.strip():
-                                data.append(json.loads(line))
-                    
-                    for item in data:
-                        title = item.get('title')
-                        if not title: continue
-                        
-                        category_name = item.get('categorie') or "Uncategorized"
-                        if category_name not in categories:
-                            category, _ = Category.objects.get_or_create(name=category_name)
-                            categories[category_name] = category
-                        
-                        category = categories[category_name]
-                        product = Product(
-                            title=title,
-                            category=category,
-                            image=item.get('image'),
-                            price=item.get('price'),
-                            rating=item.get('rating'),
-                            nbr_rating=item.get('nbr_rating'),
-                            description=item.get('description'),
-                            name=title,
-                            about_product=item.get('description') or ""
-                        )
-                        new_products.append(product)
-            except Exception as e:
-                self.stdout.write(self.style.ERROR(f"  Error processing {file_path.name}: {e}"))
-
-        if new_products:
-            Product.objects.bulk_create(new_products, batch_size=500)
-            self.stdout.write(self.style.SUCCESS(f"  Imported {len(new_products)} products."))
-
-    def clean_data(self):
-        import re
-        products = Product.objects.all()
-        cleaned_count = 0
-        deleted_count = 0
-        EUR_TO_USD = 1.05 
-        
-        for product in products:
-            if not product.price or not product.price.strip():
-                product.delete()
-                deleted_count += 1
-                continue
-                
-            original_price = product.price
-            price_str = original_price
-            
-            if ',,' in price_str: price_str = price_str.replace(',,', ',')
-            if '..' in price_str: price_str = price_str.replace('..', '.')
-                
-            clean_str = price_str.replace('€', '').replace('$', '').strip()
-            clean_str = clean_str.replace(' ', '').replace('\u202f', '')
-            clean_str = clean_str.replace(',', '.')
-            
-            try:
-                match = re.search(r'[\d\.]+', clean_str)
-                if match:
-                    val_eur = float(match.group())
-                    val_usd = val_eur * EUR_TO_USD
-                    new_price = f"${val_usd:.2f}"
-                    
-                    if new_price != original_price:
-                        product.price = new_price
-                        product.save()
-                        cleaned_count += 1
-            except ValueError:
-                pass
-                
-        self.stdout.write(f"  Cleanup: {cleaned_count} converted, {deleted_count} deleted.")
 

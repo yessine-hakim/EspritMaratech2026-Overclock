@@ -23,6 +23,7 @@ class Product(models.Model):
     description = models.TextField(blank=True, null=True)
     image = models.URLField(max_length=500, blank=True, null=True, help_text="Main image URL from JSON")
     image_urls = models.TextField(blank=True, null=True, help_text="Pipe-separated image URLs")
+    barcode = models.CharField(max_length=100, blank=True, null=True, help_text="Barcode from JSON")
     
     # Legacy fields (kept for backward compatibility)
     name = models.CharField(max_length=500, blank=True, help_text="Alias for title, kept for compatibility")

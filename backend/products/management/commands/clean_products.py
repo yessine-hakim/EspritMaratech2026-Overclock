@@ -1,67 +1,90 @@
-from django.core.management.base import BaseCommand
-from products.models import Product
-import re
+import json
+import os
 
-class Command(BaseCommand):
-    help = 'Clean product data: fix price typos, remove invalid products, and convert to USD'
-
-    def handle(self, *args, **kwargs):
-        self.stdout.write('Starting product cleanup and conversion...')
+def clean_products(input_file, output_file):
+    print(f"Cleaning products from {input_file}...")
+    
+    count = 0
+    with open(input_file, 'r', encoding='utf-8') as f_in, \
+         open(output_file, 'w', encoding='utf-8') as f_out:
         
-        products = Product.objects.all()
-        cleaned_count = 0
-        deleted_count = 0
-        converted_count = 0
-        
-        # approximate exchange rate
-        EUR_TO_USD = 1.05 
-        
-        for product in products:
-            if not product.price or not product.price.strip():
-                self.stdout.write(f'Deleting product {product.id} (Title: {product.title[:30]}...) - Price is empty')
-                product.delete()
-                deleted_count += 1
-                continue
-                
-            original_price = product.price
-            price_str = original_price
-            
-            # Step 1: specific typo fix (double commas)
-            if ',,' in price_str:
-                price_str = price_str.replace(',,', ',')
-            if '..' in price_str:
-                price_str = price_str.replace('..', '.')
-                
-            # Step 2: Extract numeric value
-            # Remove currency symbol and whitespace
-            clean_str = price_str.replace('€', '').replace('$', '').strip()
-            # Remove thousands separators (space or non-breaking space)
-            clean_str = clean_str.replace(' ', '').replace('\u202f', '')
-            # Replace decimal comma with dot
-            clean_str = clean_str.replace(',', '.')
-            
+        for line in f_in:
             try:
-                # Extract the first float found if simple parse fails, or just float()
-                # Use regex to find number in case of hidden chars
-                match = re.search(r'[\d\.]+', clean_str)
-                if match:
-                    val_eur = float(match.group())
-                    val_usd = val_eur * EUR_TO_USD
-                    
-                    # Format as USD
-                    new_price = f"${val_usd:.2f}"
-                    
-                    if new_price != original_price:
-                        product.price = new_price
-                        product.save()
-                        cleaned_count += 1
-                        # self.stdout.write(f'Converted {product.id}: "{original_price}" -> "{product.price}"')
-                else:
-                    self.stdout.write(f'Skipping {product.id}: Could not parse "{original_price}"')
-                    
-            except ValueError:
-                self.stdout.write(f'Skipping {product.id}: Error parsing "{original_price}"')
+                data = json.loads(line)
                 
-        self.stdout.write(self.style.SUCCESS(f'\nCleanup complete!'))
-        self.stdout.write(f'Processed/Converted: {cleaned_count}')
-        self.stdout.write(f'Deleted products: {deleted_count}')
+                # Extract fields based on backend/products/models.py
+                # Essential fields: title, name, category, price, rating, nbr_rating, description, image
+                
+                # Title/Name
+                title = data.get('title') or data.get('product_name') or data.get('product_name_fr') or data.get('product_name_en')
+                if not title:
+                    continue # Skip products without a name
+                
+                # Category
+                category_raw = data.get('categories', '')
+                # Often categories are comma separated or have language prefixes like "en:teas"
+                main_category = category_raw.split(',')[0].replace('en:', '').replace('fr:', '').strip().capitalize()
+                if not main_category or main_category == 'Unknown':
+                    main_category = "General"
+
+                # Price (not in source, setting dummy or placeholder if needed, but model says it's CharField)
+                price = "10.00 USD" # Placeholder as the source doesn't have prices
+                
+                # Rating
+                # nutriscore_score or similar could be used as a proxy or just empty
+                rating = str(data.get('nutriscore_score', '4.0'))
+                nbr_rating = str(data.get('scans_n', '10'))
+                
+                # Description
+                description = data.get('generic_name') or data.get('ingredients_text') or ""
+                
+                # Image
+                image = ""
+                images_dict = data.get('images', {})
+                if images_dict:
+                    # Try to find a good image URL
+                    # Open Food Facts paths are complex, but sometimes they have image_url
+                    image = data.get('image_url') or data.get('image_front_url') or ""
+                
+                if not image:
+                    # Fallback to a placeholder or attempt to construct if we had more info
+                    image = "https://via.placeholder.com/300"
+
+                cleaned_data = {
+                    "title": title,
+                    "name": title, # Keep in sync for compatibility
+                    "category": main_category,
+                    "price": price,
+                    "rating": rating,
+                    "nbr_rating": nbr_rating,
+                    "description": description[:1000] if description else "No description available.",
+                    "image": image,
+                    "barcode": data.get('_id') # Keep barcode for reference although not in model explicitly, can be useful
+                }
+                
+                f_out.write(json.dumps(cleaned_data) + '\n')
+                count += 1
+                
+            except Exception as e:
+                print(f"Error processing line: {e}")
+                
+    print(f"Done! Cleaned {count} products. Saved to {output_file}")
+
+if __name__ == "__main__":
+    # Robust path discovery
+    base_dir = os.getcwd()
+    if os.path.basename(base_dir) == 'Pay4All':
+        data_dir = os.path.join(base_dir, 'backend', 'data')
+    elif os.path.basename(base_dir) == 'backend':
+        data_dir = os.path.join(base_dir, 'data')
+    else:
+        # Fallback to file location
+        data_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '../../../data'))
+
+    input_path = os.path.join(data_dir, 'products.jsonl')
+    output_path = os.path.join(data_dir, 'products_cleaned.jsonl')
+    
+    if not os.path.exists(input_path):
+        print(f"Error: {input_path} not found. Please ensure search is correct.")
+    else:
+        clean_products(input_path, output_path)

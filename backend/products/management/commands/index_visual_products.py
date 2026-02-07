@@ -62,7 +62,8 @@ class Command(BaseCommand):
                                 "title": product.title,
                                 "price": product.price,
                                 "image": image_url,
-                                "category": product.category.name if product.category else "Uncategorized"
+                                "category": product.category.name if product.category else "Uncategorized",
+                                "barcode": product.barcode
                             }
                         ))
                         

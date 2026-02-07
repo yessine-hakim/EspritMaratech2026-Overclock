@@ -41,7 +41,8 @@ class Command(BaseCommand):
                 "price": product.price, # Stored as string in DB, might need cleaning in future but Qdrant payload stores as is.
                 "category": product.category.name if product.category else "Unknown",
                 "rating": product.rating,
-                "image": product.image or product.get_first_image()
+                "image": product.image or product.get_first_image(),
+                "barcode": product.barcode
             }
             
             doc = Document(page_content=page_content, metadata=metadata)
