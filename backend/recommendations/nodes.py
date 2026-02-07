@@ -40,9 +40,33 @@ def intent_classification_node(state: RecommendationState) -> dict[str, Any]:
         
     chain = get_intent_classification_chain()
     result = chain.invoke({"query": state["query"]})
+    
+    intent = result["intent"]
+    entities = result.get("entities", {})
+    
+    # If it's a NAVIGATION or ACTION intent, we can provide immediate control codes
+    control_code = None
+    if intent == "NAVIGATION":
+        page_map = {
+            "home": "/",
+            "banking": "/banking",
+            "cart": "/cart",
+            "profile": "/profile",
+            "products": "/results"
+        }
+        target_page = entities.get("page", "").lower()
+        if target_page in page_map:
+            control_code = {"type": "NAVIGATE", "path": page_map[target_page]}
+            
+    if intent == "ACTION":
+        action_type = entities.get("action_type", "").lower()
+        item_ref = entities.get("item_ref", "").lower()
+        control_code = {"type": "UI_ACTION", "action": action_type, "ref": item_ref}
+
     return {
-        "intent": result["intent"],
-        "bank_data": result.get("entities", {}) # Initial extraction
+        "intent": intent,
+        "bank_data": entities,
+        "control_code": control_code # Custom field for frontend voice controller
     }
 
 def banking_node(state: RecommendationState) -> dict[str, Any]:

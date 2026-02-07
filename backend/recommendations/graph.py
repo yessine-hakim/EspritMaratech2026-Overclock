@@ -31,7 +31,7 @@ def create_recommendation_graph():
     # Define routing logic
     def route_intent(state):
         intent = state.get("intent", "SHOPPING")
-        if intent == "BANKING":
+        if intent == "BANKING" or intent == "STATUS":
             return "banking"
         if intent == "SHOPPING":
             return "budget_profiling"
@@ -50,8 +50,8 @@ def create_recommendation_graph():
         }
     )
     
-    # Path: BANKING
-    workflow.add_edge("banking", "synthesis")
+    # Path: BANKING / STATUS
+    workflow.add_edge("banking", "safety_agent")
     
     # Path: SHOPPING
     workflow.add_edge("budget_profiling", "retrieval")

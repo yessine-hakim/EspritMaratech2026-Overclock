@@ -44,24 +44,63 @@ def classify_voice_intent(request):
 
             VALID ACTIONS & TARGETS:
             1. Action: 'navigate'
-               Targets: 'home', 'cart', 'banking', 'profile', 'login'
+               Targets: 'home', 'cart', 'banking', 'profile', 'login', 'results'
             2. Action: 'search'
                Target: The search query string (e.g., 'blue shoes')
             3. Action: 'accessibility'
                Targets: 'highContrast', 'fontSize', 'simplifiedMode', 'readabilityMode', 'grayscale', 'visualAlerts', 'focusMode'
                Value: true/false for toggles, or a number (100, 150, 200, 300, 400) for fontSize.
             4. Action: 'banking'
-               Targets: 'balance', 'transactions'
-            5. Action: 'chat'
+               Targets: 'balance', 'transactions', 'affordability', 'transfer'
+               Value: { "amount": number, "recipient_iban": string } for transfer.
+            5. Action: 'cart'
+               Targets: 'add', 'remove', 'view', 'clear', 'checkout'
+               Value: item name or index for add/remove.
+            6. Action: 'confirm'
+               Target: 'payment', 'transfer', 'generic'
+            7. Action: 'cancel'
+               Target: 'any'
+            8. Action: 'status_check'
+               Target: 'affordability', 'balance', 'general'
+            9. Action: 'chat'
                Target: 'general' (For general questions or conversation)
 
-            Output valid JSON only."""),
+            Output valid JSON only. Respond with helpful information in the 'response' field.
+            Example for affordability: "Yes, you have enough in your account for this item."
+            Example for adding to cart: "Adding that laptop to your cart now."
+            """),
             ("human", "User said: {transcript}"),
         ])
 
         chain = prompt | llm | parser
         result = chain.invoke({"transcript": transcript})
 
+        # --- ADVANCED: Contextual Data Binding ---
+        # If the query is about status/affordability, we need REAL data.
+        # We'll invoke the Recommendation Graph to get a data-backed response.
+        if result['action'] in ['status_check', 'banking'] and result['target'] in ['affordability', 'balance', 'general']:
+            from .graph import create_recommendation_graph
+            from cart.models import Cart
+            from .state import RecommendationState
+            
+            # Fetch real data for context
+            account = BankAccount.objects.filter(user=request.user).first()
+            cart = Cart.objects.filter(user=request.user, is_active=True).first()
+            
+            graph = create_recommendation_graph()
+            state = {
+                "query": transcript,
+                "user_profile": {"user_obj": request.user},
+                "cart_total": float(cart.total_price) if cart else 0,
+                "bank_data": {"balance": float(account.balance) if account else 0},
+                "intent": "BANKING" if result['action'] == 'banking' else "STATUS"
+            }
+            
+            # Run graph to get an intelligent, data-backed explanation
+            graph_result = graph.invoke(state)
+            if graph_result.get('explanation'):
+                result['response'] = graph_result['explanation']
+        
         return JsonResponse(result)
 
     except Exception as e:

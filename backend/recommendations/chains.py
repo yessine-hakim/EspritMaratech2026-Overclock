@@ -31,8 +31,8 @@ class BudgetOutput(BaseModel):
 # --- Intent Classification Chain ---
 
 class IntentOutput(BaseModel):
-    intent: str = Field(description="The user's intent: SHOPPING, BANKING, or NAVIGATION")
-    entities: dict[str, Any] = Field(description="Extracted entities (e.g., amount, recipient, category)")
+    intent: str = Field(description="The user's intent: SHOPPING, BANKING, NAVIGATION, or ACTION")
+    entities: dict[str, Any] = Field(description="Extracted entities (e.g., page, action_type, item_ref, product_type)")
     reasoning: str = Field(description="Brief reasoning for intent classification")
 
 def get_intent_classification_chain():
@@ -43,11 +43,15 @@ def get_intent_classification_chain():
         ("system", """You are an intent classifier for Pay4All, an inclusive financial shopping assistant.
         
         Classify the user's query into one of the following intents:
-        - **SHOPPING**: Searching for products, manage shopping lists, checking prices.
-        - **BANKING**: Checking balance, transaction history, or performing transfers.
-        - **NAVIGATION**: General questions about how to use the app or moving between pages.
+        - **SHOPPING**: Searching for products or general price checks.
+        - **BANKING**: Checking balance, transactions, or performing transfers.
+        - **NAVIGATION**: Moving between app pages (Home, Banking, Cart, Profile).
+        - **ACTION**: Specific UI interactions (Add to cart, Confirm, Go back, Selection).
+        - **STATUS**: Complex contextual questions about the user's current situation (e.g., "Can I afford my cart?", "What's my status?").
         
         Extraction Rules:
+        - For NAVIGATION: Extract 'page' (home, banking, cart, profile, products).
+        - For ACTION: Extract 'action_type' (add_to_cart, remove, confirm, select) and 'item_ref' (1st, 2nd, 'this' etc).
         - For BANKING: Extract 'amount', 'recipient', 'category' if mentioned.
         - For SHOPPING: Extract 'product_type', 'max_price' if mentioned.
         
@@ -139,6 +143,10 @@ def get_synthesis_chain():
            - **Transfer**: Explain WHY it happened or if it was blocked.
            - Example: "I transferred 50 TD to Ahmed because your balance was sufficient. Your new balance is 70 TD."
            - Safety fail: "I cannot transfer 500 TD as it exceeds your weekly limit. Please confirm with a manual signature if you wish to proceed."
+        
+        4. **STATUS / COMPLEX**:
+           - **Compound query**: Combine balance and cart info.
+           - Example: "You have 150 TND in your account, and your cart total is 45 TND. Yes, you can comfortably afford your items."
         
         3. **NAVIGATION**:
            - Explain how to use the app.

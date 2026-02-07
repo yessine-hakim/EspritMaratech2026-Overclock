@@ -80,9 +80,12 @@ const Chatbot = () => {
         console.log("Chatbot API response:", data);
 
         // Ensure recommendations is an array
-        const recommendations = Array.isArray(data.recommendations)
+        let recommendations = Array.isArray(data.recommendations)
             ? data.recommendations
             : [];
+
+        // Sort by importance (similarity_score) descending
+        recommendations.sort((a, b) => (b.similarity_score || 0) - (a.similarity_score || 0));
 
         const botResponse = {
             type: 'bot',
@@ -208,38 +211,9 @@ const Chatbot = () => {
                                         </div>
                                     )}
 
-                                    {/* Fallback: Show recommendations as text if they exist but can't render */}
-                                    {msg.type === 'bot' && msg.recommendations && !hasRecommendations && (
-                                        <div className="mt-2 p-2 bg-yellow-50 border border-yellow-200 rounded text-xs">
-                                            <strong>Debug:</strong> Recommendations exist but are not in expected format.
-                                            <pre className="mt-1 text-xs overflow-auto max-h-32">
-                                                {JSON.stringify(msg.recommendations, null, 2)}
-                                            </pre>
-                                        </div>
-                                    )}
-
-                                    {/* Debug info in development */}
-                                    {process.env.NODE_ENV === 'development' && msg.type === 'bot' && (
-                                        <div className="mt-1 text-xs text-gray-400">
-                                            Debug: recommendations={msg.recommendations?.length || 0},
-                                            isArray={Array.isArray(msg.recommendations)},
-                                            hasRecommendations={hasRecommendations}
-                                        </div>
-                                    )}
                                 </div>
                             );
                         })}
-                        {isLoading && (
-                            <div className="text-left mb-4">
-                                <div className="inline-block p-3 bg-white rounded-lg border border-gray-200 shadow-sm">
-                                    <div className="flex gap-1">
-                                        <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce"></div>
-                                        <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce delay-100"></div>
-                                        <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce delay-200"></div>
-                                    </div>
-                                </div>
-                            </div>
-                        )}
                         <div ref={messagesEndRef} />
                     </div>
 

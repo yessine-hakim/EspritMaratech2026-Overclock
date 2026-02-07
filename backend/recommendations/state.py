@@ -24,4 +24,5 @@ class RecommendationState(TypedDict):
     budget_respected: bool
     visual_ids: list[int]
     safety_check_passed: bool
+    control_code: Optional[dict[str, Any]] # For voice automation
 
