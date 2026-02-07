@@ -17,6 +17,7 @@ const AccessibilityModal = ({ isOpen, onClose }) => {
         visualAlerts, setVisualAlerts,
         focusMode, setFocusMode,
         dyslexiaFont, setDyslexiaFont,
+        spokenNavigation, setSpokenNavigation,
         speak
     } = useA11y();
 
@@ -155,6 +156,31 @@ const AccessibilityModal = ({ isOpen, onClose }) => {
                             aria-label="Toggle Visual Voice Alerts"
                         >
                             <span className={`absolute top-1 left-1 w-6 h-6 bg-white rounded-full shadow-sm transition-transform ${visualAlerts ? 'translate-x-6' : ''}`}></span>
+                        </button>
+                    </div>
+
+                    {/* Hearing: Spoken Navigation */}
+                    <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-4">
+                            <div className={`p-3 rounded-2xl ${spokenNavigation ? 'bg-accent text-white' : 'bg-gray-100 text-gray-500'}`} aria-hidden="true">
+                                <FaUniversalAccess size={20} />
+                            </div>
+                            <div>
+                                <h3 className="font-bold text-primary">Spoken Navigation</h3>
+                                <p className="text-xs text-gray-500">Announce component role on focus</p>
+                            </div>
+                        </div>
+                        <button
+                            onClick={() => {
+                                setSpokenNavigation(!spokenNavigation);
+                                speak(`Spoken navigation ${!spokenNavigation ? 'enabled' : 'disabled'}`);
+                            }}
+                            className={`w-14 h-8 rounded-full transition-all relative ${spokenNavigation ? 'bg-accent' : 'bg-gray-200'}`}
+                            role="switch"
+                            aria-checked={spokenNavigation}
+                            aria-label="Toggle Spoken Navigation"
+                        >
+                            <span className={`absolute top-1 left-1 w-6 h-6 bg-white rounded-full shadow-sm transition-transform ${spokenNavigation ? 'translate-x-6' : ''}`}></span>
                         </button>
                     </div>
 

@@ -60,6 +60,13 @@ export const A11yProvider = ({ children }) => {
             return false;
         }
     });
+    const [spokenNavigation, setSpokenNavigation] = useState(() => {
+        try {
+            return localStorage.getItem('a11y-spoken-navigation') === 'true';
+        } catch (e) {
+            return false;
+        }
+    });
     const [activeAlert, setActiveAlert] = useState(null);
 
     useEffect(() => {
@@ -73,6 +80,7 @@ export const A11yProvider = ({ children }) => {
             localStorage.setItem('a11y-visual-alerts', visualAlerts);
             localStorage.setItem('a11y-focus-mode', focusMode);
             localStorage.setItem('a11y-dyslexia-font', dyslexiaFont);
+            localStorage.setItem('a11y-spoken-navigation', spokenNavigation);
         } catch (e) {
             console.warn("localStorage persistence failed", e);
         }
@@ -132,6 +140,58 @@ export const A11yProvider = ({ children }) => {
         showVisualAlert(text);
     }, [showVisualAlert]);
 
+    // Spoken Navigation Focus Listener
+    useEffect(() => {
+        if (!spokenNavigation) return;
+
+        const handleFocus = (e) => {
+            const target = e.target;
+            if (!target) return;
+
+            // Extract Name
+            let name = "";
+            const labelledBy = target.getAttribute('aria-labelledby');
+            if (labelledBy) {
+                const labelElem = document.getElementById(labelledBy);
+                if (labelElem) name = labelElem.innerText;
+            }
+
+            if (!name) name = target.getAttribute('aria-label') ||
+                target.getAttribute('alt') ||
+                target.getAttribute('title') ||
+                (target.innerText && target.innerText.trim().split('\n')[0]) ||
+                target.getAttribute('name') ||
+                "";
+
+            // Extract Role
+            let role = target.getAttribute('role');
+            if (!role) {
+                const tag = target.tagName.toLowerCase();
+                const roleMap = {
+                    'button': 'button',
+                    'a': 'link',
+                    'input': target.type || 'input',
+                    'select': 'dropdown',
+                    'textarea': 'text area',
+                    'img': 'image'
+                };
+                role = roleMap[tag] || 'component';
+            }
+
+            if (!name) name = "Unlabeled";
+
+            // Clean up name if it's identical to role
+            if (name.toLowerCase() === role.toLowerCase()) {
+                speak(role);
+            } else {
+                speak(`${name}, ${role}`);
+            }
+        };
+
+        document.addEventListener('focusin', handleFocus);
+        return () => document.removeEventListener('focusin', handleFocus);
+    }, [spokenNavigation, speak]);
+
     return (
         <A11yContext.Provider value={{
             highContrast, setHighContrast,
@@ -142,6 +202,7 @@ export const A11yProvider = ({ children }) => {
             visualAlerts, setVisualAlerts,
             focusMode, setFocusMode,
             dyslexiaFont, setDyslexiaFont,
+            spokenNavigation, setSpokenNavigation,
             announce,
             speak
         }}>
@@ -178,6 +239,8 @@ export const useA11y = () => {
             setVisualAlerts: () => { },
             focusMode: false,
             setFocusMode: () => { },
+            spokenNavigation: false,
+            setSpokenNavigation: () => { },
             announce: () => { },
             speak: () => { }
         };
