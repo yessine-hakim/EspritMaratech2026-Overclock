@@ -13,9 +13,7 @@ This solution is developed to benefit **IBSAR** (l'Association IBSAR pour la pro
 
 ---
 
-## 👥 Team Details
-**Team Name**: Team Overclock
-**Members**:
+## 👥 Team Overclock
 *   **Edam Hakim**
 *   **Yessine Hakim**
 *   **Moez Touil**
