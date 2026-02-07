@@ -53,31 +53,13 @@ class Command(BaseCommand):
         if documents:
             self.stdout.write(f'Indexing {len(documents)} vectors... This may take a while.')
             
-            # 1. Generate embeddings
-            texts = [doc.page_content for doc in documents]
             try:
-                self.stdout.write("Generating embeddings...")
-                embeddings_list = embeddings.embed_documents(texts)
+                # Extract IDs to use as Qdrant Point IDs
+                ids = [doc.metadata["id"] for doc in documents]
                 
-                points = []
-                for i, doc in enumerate(documents):
-                    points.append(PointStruct(
-                        id=doc.metadata["id"],  # Explicitly use Product ID
-                        vector=embeddings_list[i],
-                        payload=doc.metadata
-                    ))
-
-                # 2. Upsert to Qdrant
-                batch_size = 100
-                total_points = len(points)
-                
-                for i in range(0, total_points, batch_size):
-                    batch = points[i:i + batch_size]
-                    client.upsert(
-                        collection_name=PRODUCTS_COLLECTION,
-                        points=batch
-                    )
-                    self.stdout.write(f"Upserted batch {i}-{min(i+batch_size, total_points)}")
+                # Use add_documents to ensure compatible payload structure for LangChain queries
+                # This will store payload as {"page_content": "...", "metadata": {...}}
+                vector_store.add_documents(documents, ids=ids)
                 
                 self.stdout.write(self.style.SUCCESS(f'Successfully indexed {len(documents)} products with integer IDs!'))
                 

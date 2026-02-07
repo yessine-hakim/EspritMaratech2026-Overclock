@@ -41,6 +41,32 @@ const Navbar = () => {
         return () => window.removeEventListener('keydown', handleShortcuts);
     }, [navigate]);
 
+    const performSearch = async (term, image) => {
+        if (image) {
+            const formData = new FormData();
+            formData.append('image', image);
+            if (term && term.trim()) {
+                formData.append('q', term);
+            }
+
+            try {
+                // Show loading state or feedback here if needed
+                const response = await api.post('/api/products/api/visual-search/', formData, {
+                    headers: { 'Content-Type': 'multipart/form-data' }
+                });
+                // Reset state
+                setSelectedImage(null);
+                setSearchTerm('');
+                navigate('/results', { state: { products: response.data.results, explanation: response.data.explanation } });
+            } catch (error) {
+                console.error("Visual search failed", error);
+                alert("Visual search failed. Please try again.");
+            }
+        } else if (term && term.trim()) {
+            navigate(`/results?q=${term}`);
+        }
+    };
+
     const toggleSearchVoice = () => {
         if (!('webkitSpeechRecognition' in window)) {
             alert("Speech recognition is not supported in this browser.");
@@ -64,7 +90,7 @@ const Navbar = () => {
             speak(`Searching for ${transcript}`);
             // Automatically submit search after short delay
             setTimeout(() => {
-                navigate(`/results?q=${transcript}`);
+                performSearch(transcript, selectedImage);
             }, 1000);
         };
 
@@ -77,30 +103,7 @@ const Navbar = () => {
 
     const handleSearch = async (e) => {
         e.preventDefault();
-
-        if (selectedImage) {
-            const formData = new FormData();
-            formData.append('image', selectedImage);
-            if (searchTerm.trim()) {
-                formData.append('q', searchTerm);
-            }
-
-            try {
-                // Show loading state or feedback here if needed
-                const response = await api.post('/api/products/api/visual-search/', formData, {
-                    headers: { 'Content-Type': 'multipart/form-data' }
-                });
-                // Reset state
-                setSelectedImage(null);
-                setSearchTerm('');
-                navigate('/results', { state: { products: response.data.results, explanation: response.data.explanation } });
-            } catch (error) {
-                console.error("Visual search failed", error);
-                alert("Visual search failed. Please try again.");
-            }
-        } else if (searchTerm.trim()) {
-            navigate(`/results?q=${searchTerm}`);
-        }
+        performSearch(searchTerm, selectedImage);
     };
 
     const handleImageUpload = (e) => {
