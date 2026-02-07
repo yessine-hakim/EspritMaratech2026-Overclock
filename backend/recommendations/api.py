@@ -90,7 +90,7 @@ def recommend(request):
                 visual_results = client.query_points(
                     collection_name=VISUAL_COLLECTION,
                     query=image_embedding.tolist(),
-                    limit=50
+                    limit=15
                 )
                 visual_ids = [point.id for point in visual_results.points]
                 print(f"Visual search found {len(visual_ids)} product IDs")

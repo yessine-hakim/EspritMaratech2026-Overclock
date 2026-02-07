@@ -159,7 +159,7 @@ class VisualSearchAPIView(views.APIView):
                 collection_name=VISUAL_COLLECTION,
                 query=image_embedding.tolist(),
                 query_filter=search_filter,
-                limit=50
+                limit=15
             ) 
             print(f"DEBUG: Visual search returned {len(visual_results.points)} points.")
             
@@ -270,7 +270,7 @@ class ResultsAPIView(views.APIView):
                 collection_name=PRODUCTS_COLLECTION,
                 embedding=embeddings,
             )
-            search_results = vector_store.similarity_search_with_score(query, k=50)
+            search_results = vector_store.similarity_search_with_score(query, k=20)
             ids = []
             for doc, score in search_results:
                 doc_id = doc.metadata.get('id')
