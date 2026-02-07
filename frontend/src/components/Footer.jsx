@@ -15,32 +15,32 @@ const Footer = () => {
                     </div>
 
                     {/* Links Columns */}
-                    <div>
-                        <h5 className="font-bold text-lg mb-6 text-highlight">About</h5>
+                    <nav aria-label="About Navigation">
+                        <h3 className="font-bold text-lg mb-6 text-highlight">About</h3>
                         <ul className="space-y-3">
                             <li><Link to="#" className="text-white/70 hover:text-white transition-colors">About Pay4All</Link></li>
                             <li><Link to="#" className="text-white/70 hover:text-white transition-colors">How It Works</Link></li>
                             <li><Link to="#" className="text-white/70 hover:text-white transition-colors">Blog</Link></li>
                         </ul>
-                    </div>
+                    </nav>
 
-                    <div>
-                        <h5 className="font-bold text-lg mb-6 text-highlight">Support</h5>
+                    <nav aria-label="Support Navigation">
+                        <h3 className="font-bold text-lg mb-6 text-highlight">Support</h3>
                         <ul className="space-y-3">
                             <li><Link to="#" className="text-white/70 hover:text-white transition-colors">Help Center</Link></li>
                             <li><Link to="#" className="text-white/70 hover:text-white transition-colors">Contact Us</Link></li>
                             <li><Link to="#" className="text-white/70 hover:text-white transition-colors">FAQ</Link></li>
                         </ul>
-                    </div>
+                    </nav>
 
-                    <div>
-                        <h5 className="font-bold text-lg mb-6 text-highlight">Legal</h5>
+                    <nav aria-label="Legal Navigation">
+                        <h3 className="font-bold text-lg mb-6 text-highlight">Legal</h3>
                         <ul className="space-y-3">
                             <li><Link to="#" className="text-white/70 hover:text-white transition-colors">Privacy Policy</Link></li>
                             <li><Link to="#" className="text-white/70 hover:text-white transition-colors">Terms of Service</Link></li>
                             <li><Link to="#" className="text-white/70 hover:text-white transition-colors">Cookies</Link></li>
                         </ul>
-                    </div>
+                    </nav>
                 </div>
 
                 <div className="border-t border-white/10 pt-8 text-center text-white/40 text-sm">

@@ -6,6 +6,7 @@ const GlobalVoiceCommander = () => {
     const [isListening, setIsListening] = useState(false);
     const [lastCommand, setLastCommand] = useState('');
     const navigate = useNavigate();
+    const { speak } = useA11y();
 
     const processCommand = useCallback((text) => {
         const command = text.toLowerCase();
@@ -30,14 +31,7 @@ const GlobalVoiceCommander = () => {
                 speak(`Searching for ${query}`);
             }
         }
-    }, [navigate]);
-
-    const speak = (text) => {
-        if ('speechSynthesis' in window) {
-            const utterance = new SpeechSynthesisUtterance(text);
-            window.speechSynthesis.speak(utterance);
-        }
-    };
+    }, [navigate, speak]);
 
     const toggleListening = () => {
         if (!('webkitSpeechRecognition' in window)) {
@@ -82,8 +76,8 @@ const GlobalVoiceCommander = () => {
             <button
                 onClick={toggleListening}
                 className={`p-4 rounded-full shadow-2xl transition-all border-4 ${isListening
-                        ? 'bg-red-500 border-red-200 text-white animate-pulse'
-                        : 'bg-white border-accent/20 text-accent hover:border-accent'
+                    ? 'bg-red-500 border-red-200 text-white animate-pulse'
+                    : 'bg-white border-accent/20 text-accent hover:border-accent'
                     }`}
                 title="Global Voice Command (Ctrl+V)"
             >

@@ -77,15 +77,15 @@ const ResultsPage = () => {
     return (
         <main className="container mx-auto px-4 py-8 grid grid-cols-1 lg:grid-cols-[280px_1fr] gap-8">
             {/* Filters Sidebar */}
-            <aside className="bg-white p-6 rounded-xl shadow-sm h-fit sticky top-24">
+            <aside className="bg-white p-6 rounded-xl shadow-sm h-fit sticky top-24" aria-label="Search Filters">
                 <div className="flex items-center justify-between mb-6 pb-4 border-b border-gray-light">
                     <h3 className="font-bold text-lg text-primary flex items-center gap-2">
-                        <FaFilter size={16} className="text-accent" /> Filters
+                        <FaFilter size={16} className="text-accent" aria-hidden="true" /> Filters
                     </h3>
                 </div>
 
-                <div className="mb-8">
-                    <h4 className="font-semibold text-primary mb-4">Category</h4>
+                <div className="mb-8" role="group" aria-labelledby="filter-category-title">
+                    <h4 id="filter-category-title" className="font-semibold text-primary mb-4">Category</h4>
                     <div className="space-y-3">
                         {categories.map(cat => (
                             <label key={cat.id} className="flex items-center gap-3 cursor-pointer group">
@@ -95,21 +95,22 @@ const ResultsPage = () => {
                                     checked={selectedCategories.includes(String(cat.id))}
                                     onChange={handleCategoryChange}
                                     className="w-5 h-5 rounded border-gray-300 text-accent focus:ring-accent"
+                                    aria-label={`Filter by ${cat.name}`}
                                 />
-                                <span className="text-gray-600 group-hover:text-accent transition-colors">{cat.name}</span>
+                                <span className="text-gray-600 group-hover:text-accent transition-colors" aria-hidden="true">{cat.name}</span>
                                 <span className="ml-auto text-xs text-gray-400 bg-gray-100 px-2 py-1 rounded-full">{cat.count}</span>
                             </label>
                         ))}
                     </div>
                 </div>
 
-                <div className="mb-8">
-                    <h4 className="font-semibold text-primary mb-4">Rating</h4>
+                <div className="mb-8" role="group" aria-labelledby="filter-rating-title">
+                    <h4 id="filter-rating-title" className="font-semibold text-primary mb-4">Rating</h4>
                     <div className="space-y-3">
                         {[5, 4, 3].map(rating => (
                             <label key={rating} className="flex items-center gap-3 cursor-pointer group">
-                                <input type="checkbox" className="w-5 h-5 rounded border-gray-300 text-accent focus:ring-accent" />
-                                <div className="flex items-center text-yellow-400 text-sm">
+                                <input type="checkbox" className="w-5 h-5 rounded border-gray-300 text-accent focus:ring-accent" aria-label={`Filter by ${rating} stars and up`} />
+                                <div className="flex items-center text-yellow-400 text-sm" aria-hidden="true">
                                     {[...Array(5)].map((_, i) => (
                                         <FaStar key={i} className={i < rating ? "fill-current" : "text-gray-300"} />
                                     ))}
@@ -126,23 +127,23 @@ const ResultsPage = () => {
             </aside>
 
             {/* Results Content */}
-            <section>
+            <section aria-labelledby="results-main-title">
                 {/* Smart Banner */}
                 {explanation && (
-                    <div className="bg-blue-50 border border-blue-100 rounded-xl p-6 mb-8 relative overflow-hidden">
+                    <div className="bg-blue-50 border border-blue-100 rounded-xl p-6 mb-8 relative overflow-hidden" role="status" aria-live="polite">
                         <div className="relative z-10">
                             <strong className="block text-blue-900 text-lg mb-1">Smart Results</strong>
                             <p className="text-blue-800/80 italic">{explanation}</p>
                         </div>
-                        <div className="absolute top-0 right-0 w-32 h-32 bg-blue-100 rounded-full translate-x-10 -translate-y-10 blur-xl"></div>
+                        <div className="absolute top-0 right-0 w-32 h-32 bg-blue-100 rounded-full translate-x-10 -translate-y-10 blur-xl" aria-hidden="true"></div>
                     </div>
                 )}
 
                 <div className="mb-8">
-                    <h2 className="text-3xl font-bold text-primary mb-2">
+                    <h2 id="results-main-title" className="text-3xl font-bold text-primary mb-2">
                         {q ? `Results for "${q}"` : categoryId ? 'Category Search' : 'All Products'}
                     </h2>
-                    <p className="text-gray-medium">Showing {products.length} results</p>
+                    <p className="text-gray-medium" aria-live="polite">Showing {products.length} results</p>
                 </div>
 
                 {loading ? (

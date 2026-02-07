@@ -1,12 +1,14 @@
 import React, { createContext, useState, useEffect, useContext } from 'react';
 import api from '../api';
 import { useAuth } from './AuthContext';
+import { useA11y } from './A11yContext';
 
 const CartContext = createContext(null);
 
 export const CartProvider = ({ children }) => {
     const { user } = useAuth();
     const [cart, setCart] = useState(null);
+    const { speak } = useA11y();
 
     const fetchCart = async () => {
         if (!user) {
@@ -29,6 +31,7 @@ export const CartProvider = ({ children }) => {
         try {
             const response = await api.post(`/api/cart/api/add/${productId}/`);
             setCart(response.data);
+            speak("Item added to cart successfully.");
             return true;
         } catch (error) {
             console.error("Add to cart failed", error);

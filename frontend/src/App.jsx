@@ -7,6 +7,8 @@ import Navbar from './components/Navbar';
 import Footer from './components/Footer';
 import Chatbot from './components/Chatbot';
 import GlobalVoiceCommander from './components/GlobalVoiceCommander';
+import RouteAnnouncer from './components/RouteAnnouncer';
+import AccessibilityModal from './components/AccessibilityModal';
 import HomePage from './pages/HomePage';
 import LoginPage from './pages/LoginPage';
 import RegisterPage from './pages/RegisterPage';
@@ -37,6 +39,7 @@ function App() {
                             <Footer />
                             <Chatbot />
                             <GlobalVoiceCommander />
+                            <RouteAnnouncer />
                         </div>
                     </CartProvider>
                 </AuthProvider>

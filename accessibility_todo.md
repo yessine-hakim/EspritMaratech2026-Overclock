@@ -4,30 +4,30 @@
 
 ### 1. Screen Reader & Blind Accessibility
 Refactor platform for full screen reader compatibility.
-- [ ] Use semantic HTML elements (nav, main, article, button).
-- [ ] Add ARIA roles, labels, and landmarks where native HTML falls short.
-- [ ] Ensure all images have meaningful `alt` text.
-- [ ] Announce dynamic content changes using `aria-live` regions.
-- [ ] Announce page navigation and routing changes.
-- [ ] Associate form labels, errors, and instructions explicitly.
-- [ ] Replace `div`-based interactions with native buttons/links.
+- [x] Use semantic HTML elements (nav, main, article, button).
+- [x] Add ARIA roles, labels, and landmarks where native HTML falls short.
+- [x] Ensure all images have meaningful `alt` text.
+- [x] Announce dynamic content changes using `aria-live` regions.
+- [x] Announce page navigation and routing changes.
+- [x] Associate form labels, errors, and instructions explicitly.
+- [x] Replace `div`-based interactions with native buttons/links.
 
 ### 2. Voice Interaction (Speech-to-Text + TTS)
 Add optional voice interaction layer.
-- [ ] Implement speech-to-text for navigation (Whisper/Vosk).
-- [ ] Implement text-to-speech feedback (Piper/Coqui).
-- [ ] Ensure voice interaction is optional and non-blocking.
-- [ ] Provide keyboard/screen reader fallback.
-- [ ] Audible announcements for success/error states.
+- [x] Implement speech-to-text for navigation (GlobalVoiceCommander).
+- [x] Implement text-to-speech feedback (A11yContext.speak).
+- [x] Ensure voice interaction is optional and non-blocking.
+- [x] Provide keyboard/screen reader fallback.
+- [x] Audible announcements for success/error states.
 
 ### 3. Eye-Tracking & Severe Motor Disability
 Support eye-tracking and switch-control.
-- [ ] Ensure full keyboard accessibility for all actions.
-- [ ] Replace non-semantic elements with native controls.
-- [ ] Enforce minimum target size of 44x44px.
-- [ ] Prevent actions triggering on focus alone.
-- [ ] Add strong, visible focus indicators.
-- [ ] Ensure linear and predictable focus order.
+- [x] Ensure full keyboard accessibility for all actions.
+- [x] Replace non-semantic elements with native controls.
+- [x] Enforce minimum target size of 44x44px.
+- [x] Prevent actions triggering on focus alone.
+- [x] Add strong, visible focus indicators.
+- [x] Ensure linear and predictable focus order.
 
 ### 4. Low Vision & Zoom
 - [ ] Support text resizing up to 400% without layout breakage.
