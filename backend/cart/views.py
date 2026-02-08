@@ -1,4 +1,17 @@
-from django.shortcuts import render, redirect, get_object_or_404
+
+class DebugLoggingMiddleware:
+    def __init__(self, get_response):
+        self.get_response = get_response
+
+    def __call__(self, request):
+        if request.path.startswith('/api/'):
+            print(f"DEBUG: Middleware - Path: {request.path}")
+            print(f"DEBUG: Middleware - Auth: {request.user.is_authenticated}")
+            print(f"DEBUG: Middleware - Cookies: {list(request.COOKIES.keys())}")
+            # print(f"DEBUG: Middleware - Origin: {request.headers.get('Origin')}")
+        
+        response = self.get_response(request)
+        return response
 from django.contrib.auth.decorators import login_required
 from django.views.decorators.http import require_POST
 from products.models import Product
