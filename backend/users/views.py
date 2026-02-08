@@ -1,4 +1,6 @@
-from django.contrib.auth import login, logout
+from django.shortcuts import render, redirect
+from django.contrib.auth import login, logout, authenticate
+from django.contrib.auth.forms import AuthenticationForm
 from django.utils.decorators import method_decorator
 from django.views.decorators.csrf import ensure_csrf_cookie, csrf_protect
 from django.middleware.csrf import get_token
@@ -6,6 +8,7 @@ from rest_framework import generics, permissions, status, views
 from rest_framework.response import Response
 from .serializers import UserRegistrationSerializer, UserSerializer, LoginSerializer
 from .transcription import transcribe_audio
+from .forms import CustomUserCreationForm
 
 # Keep existing Function Based Views if needed for backward compatibility or direct access, 
 # but for the React migration we focus on these API Views.
@@ -109,3 +112,29 @@ class UpdateBankAccountAPIView(views.APIView):
             
         except BankAccount.DoesNotExist:
             return Response({'error': 'Invalid IBAN. Account not found.'}, status=status.HTTP_404_NOT_FOUND)
+
+def login_view(request):
+    if request.method == 'POST':
+        form = AuthenticationForm(request, data=request.data if hasattr(request, 'data') else request.POST)
+        if form.is_valid():
+            user = form.get_user()
+            login(request, user)
+            return redirect('home')
+    else:
+        form = AuthenticationForm()
+    return render(request, 'users/login.html', {'form': form})
+
+def register_view(request):
+    if request.method == 'POST':
+        form = CustomUserCreationForm(request.POST)
+        if form.is_valid():
+            user = form.save()
+            login(request, user)
+            return redirect('home')
+    else:
+        form = CustomUserCreationForm()
+    return render(request, 'users/register.html', {'form': form})
+
+def logout_view(request):
+    logout(request)
+    return redirect('home')
