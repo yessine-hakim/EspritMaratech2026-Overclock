@@ -16,7 +16,6 @@ const RegisterPage = () => {
         monthly_budget: '',
         max_single_purchase: '',
         preferred_price_range_min: '',
-        preferred_price_range_min: '',
         preferred_price_range_max: '',
         currency: 'TND',
         iban: ''
