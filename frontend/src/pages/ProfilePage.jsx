@@ -84,18 +84,18 @@ const ProfilePage = () => {
     if (!user) return <div className="text-center py-20">Please log in to view your profile.</div>;
 
     return (
-        <main className="container mx-auto px-4 py-12 max-w-4xl animate-fadeIn">
-            <header className="mb-10 flex items-center justify-between">
+        <main className="container mx-auto px-4 py-6 md:py-12 max-w-4xl animate-fadeIn">
+            <header className="mb-6 md:mb-10 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
                 <div>
-                    <h1 className="text-4xl font-black text-primary mb-2 flex items-center gap-3">
+                    <h1 className="text-2xl md:text-4xl font-black text-primary mb-1 md:mb-2 flex items-center gap-2 md:gap-3">
                         <FaUser className="text-accent" /> Your Profile
                     </h1>
-                    <p className="text-gray-500">Manage your personal information and personal shopping settings.</p>
+                    <p className="text-gray-500 text-sm md:text-base">Manage your personal information and personal shopping settings.</p>
                 </div>
-                <div className="flex items-center gap-3">
+                <div className="flex items-center gap-2 md:gap-3">
                     <button
                         onClick={() => navigate('/banking')}
-                        className="flex items-center gap-2 bg-emerald-500 text-white px-5 py-2.5 rounded-xl font-bold hover:bg-emerald-600 transition-all shadow-md active:scale-95"
+                        className="flex items-center gap-2 bg-emerald-500 text-white px-4 md:px-5 py-2 md:py-2.5 rounded-xl font-bold hover:bg-emerald-600 transition-all shadow-md active:scale-95 text-sm md:text-base"
                     >
                         <FaWallet /> My Wallet
                     </button>

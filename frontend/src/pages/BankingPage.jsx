@@ -55,30 +55,30 @@ const BankingPage = () => {
     </div>;
 
     return (
-        <div className="max-w-4xl mx-auto p-6 space-y-8 animate-fadeIn">
-            <header className="flex flex-col gap-6">
-                <h1 className="text-5xl font-black text-primary flex items-center gap-4">
+        <div className="max-w-4xl mx-auto p-4 md:p-6 space-y-6 md:space-y-8 animate-fadeIn">
+            <header className="flex flex-col gap-4 md:gap-6">
+                <h1 className="text-3xl md:text-5xl font-black text-primary flex items-center gap-3 md:gap-4">
                     <FaWallet className="text-accent" /> My Wallet
                 </h1>
-                <div className="bg-white p-8 rounded-3xl shadow-xl border-4 border-accent/10 text-left max-w-sm">
-                    <p className="text-lg text-gray-500 font-bold uppercase tracking-widest mb-1">Available Balance</p>
-                    <p className="text-6xl font-black text-primary">
-                        {account?.balance} <span className="text-2xl font-bold text-accent">TND</span>
+                <div className="bg-white p-6 md:p-8 rounded-2xl md:rounded-3xl shadow-xl border-2 md:border-4 border-accent/10 text-left max-w-full md:max-w-sm">
+                    <p className="text-sm md:text-lg text-gray-500 font-bold uppercase tracking-widest mb-1">Available Balance</p>
+                    <p className="text-4xl md:text-6xl font-black text-primary">
+                        {account?.balance} <span className="text-xl md:text-2xl font-bold text-accent">TND</span>
                     </p>
                 </div>
             </header>
 
-            <div className="grid md:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6">
                 {/* Virtual Card */}
-                <div className="bg-gradient-to-br from-accent to-[#0e5a56] p-6 rounded-3xl text-white shadow-xl transform transition-all group relative overflow-hidden">
+                <div className="bg-gradient-to-br from-accent to-[#0e5a56] p-5 md:p-6 rounded-2xl md:rounded-3xl text-white shadow-xl transform transition-all group relative overflow-hidden">
                     <div className="absolute top-0 right-0 w-32 h-32 bg-white/5 rounded-full -mr-16 -mt-16 blur-2xl"></div>
-                    <div className="flex justify-between items-start mb-12 relative z-10">
+                    <div className="flex justify-between items-start mb-8 md:mb-12 relative z-10">
                         <div className="bg-white/20 p-2 rounded-lg backdrop-blur-md">
-                            <FaWallet size={20} />
+                            <FaWallet size={18} />
                         </div>
                         <span className="text-xs font-bold tracking-widest uppercase opacity-80">Pay4All Card</span>
                     </div>
-                    <p className="text-xl font-mono mb-2 tracking-widest relative z-10">
+                    <p className="text-base md:text-xl font-mono mb-2 tracking-widest relative z-10 break-all">
                         {account?.iban?.replace(/(.{4})/g, '$1 ')}
                     </p>
                     <div className="flex justify-between items-end relative z-10">
@@ -90,18 +90,18 @@ const BankingPage = () => {
                     </div>
                 </div>
 
-                <div className="md:col-span-2 bg-white p-6 rounded-3xl shadow-sm border border-gray-100 flex flex-col justify-center gap-4">
-                    <h2 className="text-lg font-bold flex items-center gap-2 text-primary">
+                <div className="md:col-span-2 bg-white p-4 md:p-6 rounded-2xl md:rounded-3xl shadow-sm border border-gray-100 flex flex-col justify-center gap-3 md:gap-4">
+                    <h2 className="text-base md:text-lg font-bold flex items-center gap-2 text-primary">
                         <FaExchangeAlt className="text-accent" /> Quick Actions
                     </h2>
-                    <div className="grid grid-cols-2 gap-4">
+                    <div className="grid grid-cols-2 gap-3 md:gap-4">
                         <button
                             onClick={() => setShowTransferModal(true)}
-                            className="flex items-center justify-center gap-2 p-4 bg-gray-50 rounded-2xl hover:bg-accent hover:text-white transition-all font-bold group border border-transparent shadow-sm"
+                            className="flex items-center justify-center gap-2 p-3 md:p-4 bg-gray-50 rounded-xl md:rounded-2xl hover:bg-accent hover:text-white transition-all font-bold group border border-transparent shadow-sm text-sm md:text-base"
                         >
                             <FaArrowUp className="group-hover:translate-y-[-2px] transition-transform" /> Send Money
                         </button>
-                        <button className="flex items-center justify-center gap-2 p-4 bg-gray-50 rounded-2xl hover:bg-neutral-100 transition-all font-bold text-gray-400 cursor-not-allowed border border-transparent">
+                        <button className="flex items-center justify-center gap-2 p-3 md:p-4 bg-gray-50 rounded-xl md:rounded-2xl hover:bg-neutral-100 transition-all font-bold text-gray-400 cursor-not-allowed border border-transparent text-sm md:text-base">
                             <FaArrowDown /> Request Pay
                         </button>
                     </div>
