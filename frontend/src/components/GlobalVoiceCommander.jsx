@@ -98,8 +98,13 @@ const GlobalVoiceCommander = () => {
         const transcript = text.toLowerCase().trim();
         if (!transcript) return;
 
+        // Force conversational mode if we are in an auth flow
+        if (authStep) {
+            startConversationalMode();
+        }
+
         let processedTranscript = transcript;
-        const hasWakeWord = transcript.includes("hey assistant") || transcript.includes("assistant");
+        const hasWakeWord = transcript.includes("hey assistant") || transcript.includes("assistant") || transcript.includes("hey assistance") || transcript.includes("assistance");
 
         // Use refs to avoid stale closures in recognition callbacks
         if (isHandsFreeRef.current && !isConversationalRef.current && !hasWakeWord) {
@@ -107,7 +112,7 @@ const GlobalVoiceCommander = () => {
         }
 
         if (hasWakeWord) {
-            processedTranscript = transcript.replace(/hey assistant|assistant/, "").trim();
+            processedTranscript = transcript.replace(/hey assistant|assistant|hey assistance|assistance/, "").trim();
             startConversationalMode();
             if (!processedTranscript) {
                 speak("How can I help you?");
@@ -116,6 +121,117 @@ const GlobalVoiceCommander = () => {
             }
         } else if (isConversationalRef.current) {
             startConversationalMode(); // Extend the window
+        }
+
+        // --- AUTH FLOW HANDLER (PRIORITY) ---
+        // Catch "cancel" early to avoid AI calls
+        const isCancel = processedTranscript.includes("cancel") || processedTranscript.includes("stop") || processedTranscript.includes("never mind");
+
+        if (authStep) {
+            if (isCancel) {
+                speak("Authentication cancelled.");
+                setAuthStep(null);
+                setAuthData({});
+                setIsThinking(false);
+                return;
+            }
+
+            // If we are in voice enrollment, don't process further transcripts until recording finishes
+            if (isRecordingBiometrics) return;
+
+            // Handle Registration Data locally - skip AI for simple text collection
+            const rawValue = processedTranscript;
+
+            if (authStep === 'REG_EMAIL') {
+                setAuthData({ ...authData, email: rawValue });
+                setAuthStep('REG_FIRST');
+                speak("Thank you. What is your first name?");
+                return;
+            }
+            if (authStep === 'REG_FIRST') {
+                setAuthData({ ...authData, first_name: rawValue });
+                setAuthStep('REG_LAST');
+                speak("And your last name?");
+                return;
+            }
+            if (authStep === 'REG_LAST') {
+                setAuthData({ ...authData, last_name: rawValue });
+                setAuthStep('REG_BUDGET');
+                speak("What is your monthly shopping budget?");
+                return;
+            }
+            if (authStep === 'REG_BUDGET') {
+                const budget = parseFloat(rawValue.replace(/[^0-9.]/g, '')) || 100;
+                setAuthData({ ...authData, monthly_budget: budget });
+                setAuthStep('REG_VOICE');
+                speak("Got it. Now, for your security, let's link your unique voice fingerprint. Please say: 'My voice is my password' after the tone.");
+                setTimeout(async () => {
+                    const blob = await recordBiometrics();
+                    if (blob) {
+                        setAuthData(prev => ({ ...prev, voiceBlob: blob }));
+                        speak("Voice signature captured. Say 'Confirm registration' to finish.");
+                        setAuthStep('REG_CONFIRM');
+                    } else {
+                        speak("Recording failed. Let's try once more.");
+                    }
+                }, 3000);
+                return;
+            }
+
+            if (authStep === 'REG_CONFIRM') {
+                if (processedTranscript.includes("confirm") || processedTranscript.includes("yes")) {
+                    speak("Auto-allocating your linked bank account and creating your secure profile... please wait.");
+                    try {
+                        const { voiceBlob, ...apiData } = authData;
+
+                        // 1. Fetch an unclaimed IBAN
+                        const ibanResp = await api.get('/api/banking/unclaimed-iban/');
+                        const iban = ibanResp.data.iban;
+
+                        // 2. Register with IBAN
+                        const randomPass = Math.random().toString(36).slice(-12) + "V0ice!";
+                        await register({ ...apiData, iban, password: randomPass, confirmPassword: randomPass });
+
+                        if (voiceBlob) {
+                            const formData = new FormData();
+                            formData.append('audio', voiceBlob, 'enroll.wav');
+                            await api.post('/api/voiceid/enroll/', formData);
+                        }
+
+                        speak(`Welcome ${authData.first_name || 'user'}. Your account is ready and linked to account ending in ${iban.slice(-4)}. From now on, your voice is your only key.`);
+                        setAuthStep(null);
+                        setAuthData({});
+                        navigate('/');
+                    } catch (e) {
+                        console.error("Voice registration error:", e);
+                        speak(e.response?.data?.error || "Registration failed. Please try again or use manual registration.");
+                        setAuthStep(null);
+                    }
+                    return;
+                }
+            }
+
+            // LOGIN FLOW
+            if (authStep === 'LOGIN_EMAIL') {
+                setAuthData({ ...authData, username: rawValue });
+                setAuthStep('LOGIN_PASSWORD');
+                speak("Got it. Now, please say your password.");
+                return;
+            }
+            if (authStep === 'LOGIN_PASSWORD') {
+                const email = authData.username;
+                const pass = rawValue;
+                setAuthStep(null);
+                setAuthData({});
+                speak("Identifying your voice... please wait.");
+                try {
+                    await login(email, pass);
+                    navigate('/');
+                } catch (e) {
+                    speak("Identification failed. Please check your credentials.");
+                }
+                return;
+            }
         }
 
         console.log("Processing AI voice command:", processedTranscript);
@@ -151,104 +267,6 @@ const GlobalVoiceCommander = () => {
                     }
                 }, 3000);
                 return;
-            }
-
-            // --- AUTH FLOW HANDLER ---
-            if (authStep) {
-                if (action === 'cancel' || processedTranscript.includes("cancel")) {
-                    speak("Authentication cancelled.");
-                    setAuthStep(null);
-                    setAuthData({});
-                    return;
-                }
-
-                const rawValue = processedTranscript;
-
-                // LOGIN FLOW
-                if (authStep === 'LOGIN_EMAIL') {
-                    setAuthData({ ...authData, username: rawValue });
-                    setAuthStep('LOGIN_PASSWORD');
-                    speak("Got it. Now, please say your password.");
-                    return;
-                }
-                if (authStep === 'LOGIN_PASSWORD') {
-                    const email = authData.username;
-                    const pass = rawValue;
-                    setAuthStep(null);
-                    setAuthData({});
-                    speak("Identifying your voice... please wait.");
-                    try {
-                        await login(email, pass);
-                        navigate('/');
-                    } catch (e) {
-                        speak("Identification failed. Please check your credentials.");
-                    }
-                    return;
-                }
-
-                // Registration Steps
-                if (authStep === 'REG_EMAIL') {
-                    setAuthData({ ...authData, email: rawValue });
-                    setAuthStep('REG_FIRST');
-                    speak("Thank you. What is your first name?");
-                    return;
-                }
-                if (authStep === 'REG_FIRST') {
-                    setAuthData({ ...authData, first_name: rawValue });
-                    setAuthStep('REG_LAST');
-                    speak("And your last name?");
-                    return;
-                }
-                if (authStep === 'REG_LAST') {
-                    setAuthData({ ...authData, last_name: rawValue });
-                    setAuthStep('REG_BUDGET');
-                    speak("What is your monthly shopping budget?");
-                    return;
-                }
-                if (authStep === 'REG_BUDGET') {
-                    const budget = parseFloat(rawValue.replace(/[^0-9.]/g, '')) || 100;
-                    setAuthData({ ...authData, monthly_budget: budget });
-                    setAuthStep('REG_VOICE');
-                    speak("Got it. Now, for your security, let's link your unique voice fingerprint. Please say: 'My voice is my password' after the tone.");
-                    setTimeout(async () => {
-                        const blob = await recordBiometrics();
-                        if (blob) {
-                            setAuthData(prev => ({ ...prev, voiceBlob: blob }));
-                            speak("Voice signature captured. Say 'Confirm registration' to finish.");
-                            setAuthStep('REG_CONFIRM');
-                        } else {
-                            speak("Recording failed. Let's try once more.");
-                        }
-                    }, 3000);
-                    return;
-                }
-
-                if (authStep === 'REG_CONFIRM') {
-                    if (action === 'confirm' || processedTranscript.includes("confirm")) {
-                        speak("Creating your secure voice-only account... please wait.");
-                        try {
-                            const { voiceBlob, ...apiData } = authData;
-                            // Generate a random internal password since Django requires it
-                            const randomPass = Math.random().toString(36).slice(-12) + "V0ice!";
-                            await register({ ...apiData, password: randomPass, confirmPassword: randomPass });
-
-                            if (voiceBlob) {
-                                const formData = new FormData();
-                                formData.append('audio', voiceBlob, 'enroll.wav');
-                                await api.post('/api/voiceid/enroll/', formData);
-                            }
-
-                            speak(`Welcome ${authData.first_name}. Your account is ready. From now on, your voice is your only key.`);
-                            setAuthStep(null);
-                            setAuthData({});
-                            navigate('/');
-                        } catch (e) {
-                            speak("Registration failed. Please try again.");
-                            setAuthStep(null);
-                        }
-                        return;
-                    }
-                }
             }
 
             // --- AUTH TRIGGER HANDLER ---
