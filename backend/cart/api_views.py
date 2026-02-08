@@ -17,17 +17,33 @@ class AddToCartAPIView(views.APIView):
     permission_classes = [permissions.IsAuthenticated]
 
     def post(self, request, product_id):
-        cart, _ = Cart.objects.get_or_create(user=request.user, is_active=True)
-        product = get_object_or_404(Product, pk=product_id)
-        
-        cart_item, created = CartItem.objects.get_or_create(cart=cart, product=product)
-        if not created:
-            cart_item.quantity += 1
-            cart_item.save()
-        
-        # Return updated cart
-        serializer = CartSerializer(cart)
-        return Response(serializer.data, status=status.HTTP_200_OK)
+        print(f"DEBUG: AddToCartAPIView.post called for user {request.user}")
+        print(f"DEBUG: Headers: {request.headers}")
+        print(f"DEBUG: CSRF Cookie in request: {request.COOKIES.get('pay4all_csrftoken')}")
+        try:
+            cart, _ = Cart.objects.get_or_create(user=request.user, is_active=True)
+            print(f"DEBUG: Found/created active cart {cart.id}")
+            product = get_object_or_404(Product, pk=product_id)
+            print(f"DEBUG: Found product {product.title}")
+            
+            cart_item, created = CartItem.objects.get_or_create(cart=cart, product=product)
+            if not created:
+                cart_item.quantity += 1
+                cart_item.save()
+                print(f"DEBUG: Incremented quantity for {product.title}")
+            else:
+                print(f"DEBUG: Created new cart item for {product.title}")
+            
+            # Return updated cart
+            serializer = CartSerializer(cart)
+            data = serializer.data
+            print(f"DEBUG: Serialization successful. Items in cart: {len(data.get('items', []))}")
+            return Response(data, status=status.HTTP_200_OK)
+        except Exception as e:
+            print(f"ERROR: AddToCartAPIView failed: {str(e)}")
+            import traceback
+            traceback.print_exc()
+            return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 class UpdateCartItemAPIView(views.APIView):
     permission_classes = [permissions.IsAuthenticated]

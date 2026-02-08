@@ -158,7 +158,11 @@ REST_FRAMEWORK = {
 }
 
 # CORS Configuration
-CORS_ALLOW_ALL_ORIGINS = True
+CORS_ALLOWED_ORIGINS = [
+    "http://localhost:5173",
+    "http://127.0.0.1:5173",
+    "https://espritmaratech2026-overclock-6.onrender.com",
+]
 CORS_ALLOW_CREDENTIALS = True
 
 # CSRF Configuration
@@ -169,6 +173,15 @@ CSRF_TRUSTED_ORIGINS = [
 ]
 
 # Cookie Settings for Dev
+SESSION_COOKIE_NAME = 'pay4all_sessionid'
+CSRF_COOKIE_NAME = 'pay4all_csrftoken'
+SESSION_COOKIE_HTTPONLY = True
+CSRF_COOKIE_HTTPONLY = False  # Allows React to read the cookie
+CSRF_USE_SESSIONS = False     # Use cookie-based CSRF for easier sync with React
 SESSION_COOKIE_SAMESITE = 'Lax'
 CSRF_COOKIE_SAMESITE = 'Lax'
-SESSION_COOKIE_HTTPONLY = False  # easier debugging
+CSRF_HEADER_NAME = 'HTTP_X_CSRFTOKEN'
+CSRF_COOKIE_PATH = '/'
+SESSION_COOKIE_PATH = '/'
+SESSION_EXPIRE_AT_BROWSER_CLOSE = False
+SESSION_COOKIE_AGE = 1209600

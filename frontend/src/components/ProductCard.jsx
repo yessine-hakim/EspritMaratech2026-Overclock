@@ -8,6 +8,7 @@ const ProductCard = ({ product }) => {
 
     const handleAdd = (e) => {
         e.preventDefault();
+        e.stopPropagation();
         addToCart(product.id);
     };
 
@@ -15,14 +16,13 @@ const ProductCard = ({ product }) => {
     const isBudgetFit = true;
 
     return (
-        <article className="bg-white rounded-xl overflow-hidden shadow-sm hover:shadow-lg transition-all duration-300 transform hover:-translate-y-1 group border border-transparent hover:border-accent/10">
-            <Link to={`/product/${product.id}`} className="block" aria-label={`View details for ${product.title}`}>
+        <article className="bg-white rounded-xl overflow-hidden shadow-sm hover:shadow-lg transition-all duration-300 transform hover:-translate-y-1 group border border-transparent hover:border-accent/10 flex flex-col h-full">
+            <Link to={`/product/${product.id}`} className="block flex-grow" aria-label={`View details for ${product.title}`}>
                 <div className="relative h-48 w-full bg-gray-100 overflow-hidden">
                     {product.image || product.image_url ? (
                         <img
                             src={product.image || product.image_url}
-                            alt="" // Decorative if title is already announced via link aria-label, but let's make it descriptive if the title is long or helpful.
-                            // Actually, recommended for cards: link aria-label is best. alt="" prevents double-announcing.
+                            alt=""
                             className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
                             aria-hidden="true"
                         />
@@ -42,7 +42,7 @@ const ProductCard = ({ product }) => {
                     )}
                 </div>
 
-                <div className="p-5 flex flex-col flex-grow">
+                <div className="p-5 flex flex-col h-full">
                     <h3 className="font-semibold text-lg text-primary mb-2 line-clamp-2 leading-tight group-hover:text-accent transition-colors" title={product.title}>
                         {product.title}
                     </h3>
@@ -50,29 +50,29 @@ const ProductCard = ({ product }) => {
                     <p className="text-sm text-gray-medium mb-4 line-clamp-2 flex-grow">
                         {product.description || "No description available."}
                     </p>
-
-                    <div className="mt-auto flex items-center justify-between">
-                        <div>
-                            <span className="block text-2xl font-bold text-accent" aria-label={`Price: ${product.price} TND`}>{product.price} TND</span>
-                            {product.rating > 0 && (
-                                <div className="flex items-center text-xs text-yellow-500 mt-1" aria-label={`Rating: ${product.rating} stars`}>
-                                    <FaStar className="mr-1" aria-hidden="true" />
-                                    <span className="font-medium text-gray-600">{product.rating}</span>
-                                </div>
-                            )}
-                        </div>
-
-                        <button
-                            onClick={handleAdd}
-                            className="p-3 rounded-full bg-gray-50 text-accent hover:bg-accent hover:text-white focus-visible:bg-accent focus-visible:text-white transition-all duration-300 shadow-sm outline-none ring-offset-2 focus-visible:ring-2 focus-visible:ring-accent"
-                            title="Add to Cart (Enter/Space)"
-                            aria-label={`Add ${product.title} to cart`}
-                        >
-                            <FaShoppingCart size={18} aria-hidden="true" />
-                        </button>
-                    </div>
                 </div>
             </Link>
+
+            <div className="px-5 pb-5 mt-auto flex items-center justify-between border-t border-gray-50 pt-4">
+                <div>
+                    <span className="block text-2xl font-bold text-accent" aria-label={`Price: ${product.price} TND`}>{product.price} TND</span>
+                    {product.rating > 0 && (
+                        <div className="flex items-center text-xs text-yellow-500 mt-1" aria-label={`Rating: ${product.rating} stars`}>
+                            <FaStar className="mr-1" aria-hidden="true" />
+                            <span className="font-medium text-gray-600">{product.rating}</span>
+                        </div>
+                    )}
+                </div>
+
+                <button
+                    onClick={handleAdd}
+                    className="p-3 rounded-full bg-gray-50 text-accent hover:bg-accent hover:text-white focus-visible:bg-accent focus-visible:text-white transition-all duration-300 shadow-sm outline-none ring-offset-2 focus-visible:ring-2 focus-visible:ring-accent"
+                    title="Add to Cart (Enter/Space)"
+                    aria-label={`Add ${product.title} to cart`}
+                >
+                    <FaShoppingCart size={18} aria-hidden="true" />
+                </button>
+            </div>
         </article>
     );
 };
