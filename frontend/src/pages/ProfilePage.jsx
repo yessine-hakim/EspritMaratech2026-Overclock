@@ -19,6 +19,8 @@ const ProfilePage = () => {
     const [loading, setLoading] = useState(false);
     const [success, setSuccess] = useState('');
     const [error, setError] = useState('');
+    const [showIbanModal, setShowIbanModal] = useState(false);
+    const [newIban, setNewIban] = useState('');
 
     useEffect(() => {
         if (user) {
@@ -58,21 +60,42 @@ const ProfilePage = () => {
         }
     };
 
+    const handleIbanUpdate = async (e) => {
+        e.preventDefault();
+        setLoading(true);
+        setError('');
+        setSuccess('');
+
+        try {
+            const response = await api.post('/api/users/update-bank-account/', { iban: newIban });
+            await checkAuth(); // Refresh user data
+            setSuccess(`Bank account updated! New IBAN: ${response.data.iban}`);
+            setShowIbanModal(false);
+            setNewIban('');
+            setTimeout(() => setSuccess(''), 5000);
+        } catch (err) {
+            console.error("IBAN update failed", err);
+            setError(err.response?.data?.error || 'Failed to update bank account.');
+        } finally {
+            setLoading(false);
+        }
+    };
+
     if (!user) return <div className="text-center py-20">Please log in to view your profile.</div>;
 
     return (
-        <main className="container mx-auto px-4 py-12 max-w-4xl animate-fadeIn">
-            <header className="mb-10 flex items-center justify-between">
+        <main className="container mx-auto px-4 py-6 md:py-12 max-w-4xl animate-fadeIn">
+            <header className="mb-6 md:mb-10 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
                 <div>
-                    <h1 className="text-4xl font-black text-primary mb-2 flex items-center gap-3">
+                    <h1 className="text-2xl md:text-4xl font-black text-primary mb-1 md:mb-2 flex items-center gap-2 md:gap-3">
                         <FaUser className="text-accent" /> Your Profile
                     </h1>
-                    <p className="text-gray-500">Manage your personal information and personal shopping settings.</p>
+                    <p className="text-gray-500 text-sm md:text-base">Manage your personal information and personal shopping settings.</p>
                 </div>
-                <div className="flex items-center gap-3">
+                <div className="flex items-center gap-2 md:gap-3">
                     <button
                         onClick={() => navigate('/banking')}
-                        className="flex items-center gap-2 bg-emerald-500 text-white px-5 py-2.5 rounded-xl font-bold hover:bg-emerald-600 transition-all shadow-md active:scale-95"
+                        className="flex items-center gap-2 bg-emerald-500 text-white px-4 md:px-5 py-2 md:py-2.5 rounded-xl font-bold hover:bg-emerald-600 transition-all shadow-md active:scale-95 text-sm md:text-base"
                     >
                         <FaWallet /> My Wallet
                     </button>
@@ -136,10 +159,10 @@ const ProfilePage = () => {
                                 id="email"
                                 name="email"
                                 value={formData.email}
-                                disabled
-                                className="w-full p-4 bg-gray-100 border-none rounded-2xl text-gray-500 cursor-not-allowed font-medium"
+                                onChange={handleChange}
+                                className="w-full p-4 bg-gray-50 border-none rounded-2xl focus:ring-2 focus:ring-accent/20 outline-none transition-all font-medium text-primary"
                             />
-                            <p className="text-[10px] text-gray-400 mt-2 ml-1">Email is used for secure authentication and cannot be changed.</p>
+                            <p className="text-[10px] text-gray-400 mt-2 ml-1">Changing your email will update your login username.</p>
                         </div>
                     </div>
                 </section>
@@ -151,6 +174,60 @@ const ProfilePage = () => {
                     </h2>
 
                     <div className="space-y-4">
+                        <div>
+                            <div className="flex justify-between items-center mb-1">
+                                <label className="block text-xs font-bold uppercase text-gray-400 ml-1">Linked IBAN</label>
+                                <button
+                                    type="button"
+                                    onClick={() => setShowIbanModal(true)}
+                                    className="text-xs text-accent font-bold hover:underline"
+                                >
+                                    Change Account
+                                </button>
+                            </div>
+                            <div className="w-full p-4 bg-gray-100 border-none rounded-2xl text-gray-600 font-mono font-bold flex items-center justify-between">
+                                {user?.bank_account?.iban || "No Linked Account"}
+                                <span className="text-xs bg-emerald-100 text-emerald-600 px-2 py-1 rounded-md">VERIFIED</span>
+                            </div>
+                        </div>
+
+                        {/* IBAN Update Modal */}
+                        {showIbanModal && (
+                            <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+                                <div className="bg-white rounded-2xl p-6 max-w-md w-full shadow-2xl">
+                                    <h3 className="text-xl font-bold text-primary mb-4">Update Bank Account</h3>
+                                    <p className="text-sm text-gray-500 mb-4">Enter a new, valid Pay4All IBAN. This will unlink your current account.</p>
+
+                                    <div className="mb-4">
+                                        <input
+                                            type="text"
+                                            value={newIban}
+                                            onChange={(e) => setNewIban(e.target.value)}
+                                            placeholder="TN1234..."
+                                            className="w-full p-3 border border-gray-300 rounded-xl font-mono focus:ring-2 focus:ring-accent outline-none"
+                                        />
+                                    </div>
+                                    <div className="flex justify-end gap-3">
+                                        <button
+                                            type="button"
+                                            onClick={() => setShowIbanModal(false)}
+                                            className="px-4 py-2 text-gray-500 font-bold hover:bg-gray-100 rounded-lg"
+                                        >
+                                            Cancel
+                                        </button>
+                                        <button
+                                            type="button"
+                                            onClick={handleIbanUpdate}
+                                            disabled={loading || !newIban}
+                                            className="px-4 py-2 bg-accent text-white font-bold rounded-lg hover:bg-[#0e5a56] disabled:opacity-50"
+                                        >
+                                            {loading ? 'Updating...' : 'Update IBAN'}
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+
                         <div>
                             <label className="block text-xs font-bold uppercase text-gray-400 mb-1 ml-1" htmlFor="monthly_budget">Monthly Budget (TND)</label>
                             <input

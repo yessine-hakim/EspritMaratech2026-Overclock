@@ -17,7 +17,8 @@ const RegisterPage = () => {
         max_single_purchase: '',
         preferred_price_range_min: '',
         preferred_price_range_max: '',
-        currency: 'TND'
+        currency: 'TND',
+        iban: ''
     });
     const [error, setError] = useState('');
     const [isRecording, setIsRecording] = useState(false);
@@ -189,6 +190,21 @@ const RegisterPage = () => {
                     {/* Financial Context */}
                     <div className="md:col-span-2 space-y-4 mt-4">
                         <h3 className="text-lg font-semibold text-primary border-b border-gray-100 pb-2">Financial Context</h3>
+                    </div>
+
+                    <div className="md:col-span-2">
+                        <label htmlFor="reg-iban" className="block text-sm font-semibold text-primary mb-2">Bank Account IBAN</label>
+                        <input
+                            id="reg-iban"
+                            type="text"
+                            name="iban"
+                            className="w-full px-4 py-3 rounded-lg border border-gray-light bg-gray-50 focus:bg-white focus:outline-none focus:border-accent focus:ring-2 focus:ring-accent/10 transition-colors font-mono"
+                            placeholder="TN1234567890123456789012"
+                            value={formData.iban}
+                            onChange={handleChange}
+                            required
+                        />
+                        <p className="text-xs text-gray-500 mt-1">Please enter your 24-character Tunisian IBAN associated with Pay4All.</p>
                     </div>
 
                     <div>

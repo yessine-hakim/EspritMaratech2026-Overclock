@@ -1,0 +1,149 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login - Pay4All</title>
+    <link rel="stylesheet" href="{% static 'css/styles.css' %}">
+</head>
+
+<body>
+    <header class="header">
+        <nav class="nav">
+            <div class="nav-container">
+                <a href="{% url 'home' %}" class="logo">
+                    <span class="logo-text">Pay4All</span>
+                </a>
+            </div>
+        </nav>
+    </header>
+
+    <main class="auth-main">
+        <div class="auth-container">
+            <div class="auth-card">
+                <div class="auth-header">
+                    <h1>Welcome Back</h1>
+                    <p class="auth-subtitle">Sign in to your Pay4All account</p>
+                    {% if form.errors %}
+                    <p style="color: red;">Invalid username or password.</p>
+                    {% endif %}
+                </div>
+
+                <form class="auth-form" method="POST" action="{% url 'login' %}">
+                    {% csrf_token %}
+                    <div class="form-group">
+                        <label for="email">Email Address</label>
+                        <input type="email" id="email" name="username" placeholder="you@example.com" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="password">Password</label>
+                        <input type="password" id="password" name="password" placeholder="Enter your password" required>
+                    </div>
+
+                    <div class="form-options">
+                        <label class="checkbox-label">
+                            <input type="checkbox" name="remember">
+                            <span>Remember me</span>
+                        </label>
+                        <a href="#" class="forgot-link">Forgot password?</a>
+                    </div>
+
+                    <button type="submit" class="auth-button">Sign In</button>
+                </form>
+
+                <div class="auth-divider">
+                    <span>or</span>
+                </div>
+
+                <div class="social-login">
+                    <button class="social-button google-btn" type="button">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="2">
+                            <circle cx="12" cy="12" r="10"></circle>
+                            <path d="M12 6v12M6 12h12"></path>
+                        </svg>
+                        Continue with Google
+                    </button>
+                </div>
+
+                <div class="auth-footer">
+                    <p>Don't have an account? <a href="register.html" class="auth-link">Create one</a></p>
+                </div>
+            </div>
+
+            <div class="auth-features">
+                <div class="feature-highlight">
+                    <h3>Why Sign In?</h3>
+                    <ul class="features-list">
+                        <li>
+                            <svg class="feature-dot" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                stroke-width="2">
+                                <polyline points="20 6 9 17 4 12"></polyline>
+                            </svg>
+                            <span>Track your price watches</span>
+                        </li>
+                        <li>
+                            <svg class="feature-dot" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                stroke-width="2">
+                                <polyline points="20 6 9 17 4 12"></polyline>
+                            </svg>
+                            <span>Save your favorite products</span>
+                        </li>
+                        <li>
+                            <svg class="feature-dot" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                stroke-width="2">
+                                <polyline points="20 6 9 17 4 12"></polyline>
+                            </svg>
+                            <span>Get personalized recommendations</span>
+                        </li>
+                        <li>
+                            <svg class="feature-dot" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                stroke-width="2">
+                                <polyline points="20 6 9 17 4 12"></polyline>
+                            </svg>
+                            <span>Receive price drop alerts</span>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <footer class="footer">
+        <div class="footer-container">
+            <div class="footer-section">
+                <h4>Product</h4>
+                <ul>
+                    <li><a href="#">Features</a></li>
+                    <li><a href="#">Pricing</a></li>
+                    <li><a href="#">Security</a></li>
+                </ul>
+            </div>
+            <div class="footer-section">
+                <h4>Company</h4>
+                <ul>
+                    <li><a href="#">About</a></li>
+                    <li><a href="#">Blog</a></li>
+                    <li><a href="#">Careers</a></li>
+                </ul>
+            </div>
+            <div class="footer-section">
+                <h4>Legal</h4>
+                <ul>
+                    <li><a href="#">Privacy</a></li>
+                    <li><a href="#">Terms</a></li>
+                    <li><a href="#">Contact</a></li>
+                </ul>
+            </div>
+            <div class="footer-section">
+                <h4>Connect</h4>
+                <p>&copy; 2026 Pay4All. All rights reserved.</p>
+            </div>
+        </div>
+    </footer>
+</body>
+
+</html>

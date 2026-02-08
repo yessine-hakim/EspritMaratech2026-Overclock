@@ -6,7 +6,7 @@ import { A11yProvider } from './context/A11yContext';
 import Navbar from './components/Navbar';
 import Footer from './components/Footer';
 import Chatbot from './components/Chatbot';
-import VoiceController from './components/VoiceController';
+import GlobalVoiceCommander from './components/GlobalVoiceCommander';
 import RouteAnnouncer from './components/RouteAnnouncer';
 import AccessibilityModal from './components/AccessibilityModal';
 import HomePage from './pages/HomePage';
@@ -40,7 +40,7 @@ function App() {
                             </div>
                             <Footer />
                             <Chatbot />
-                            <VoiceController />
+                            <GlobalVoiceCommander />
                             <RouteAnnouncer />
                         </div>
                     </CartProvider>

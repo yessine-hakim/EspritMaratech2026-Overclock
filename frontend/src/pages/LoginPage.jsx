@@ -23,11 +23,11 @@ const LoginPage = () => {
     };
 
     return (
-        <div className="min-h-[calc(100vh-200px)] flex items-center justify-center bg-background py-16">
-            <div className="bg-white p-8 rounded-2xl shadow-lg max-w-md w-full border border-gray-100">
-                <div className="text-center mb-8">
-                    <h2 className="text-3xl font-bold text-primary mb-2">Welcome Back</h2>
-                    <p className="text-gray-medium">Sign in to continue to Pay4All</p>
+        <div className="min-h-[calc(100vh-200px)] flex items-center justify-center bg-background py-8 md:py-16 px-4">
+            <div className="bg-white p-6 md:p-8 rounded-2xl shadow-lg max-w-md w-full border border-gray-100">
+                <div className="text-center mb-6 md:mb-8">
+                    <h2 className="text-2xl md:text-3xl font-bold text-primary mb-2">Welcome Back</h2>
+                    <p className="text-gray-medium text-sm md:text-base">Sign in to continue to Pay4All</p>
                 </div>
 
                 {error && (

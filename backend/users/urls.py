@@ -9,4 +9,10 @@ urlpatterns = [
     path('csrf/', views.GetCSRFToken.as_view(), name='api_csrf'),
     path('transcribe/', views.TranscribeAPIView.as_view(), name='api_transcribe'),
     path('update/', views.ProfileUpdateAPIView.as_view(), name='api_profile_update'),
+    path('update-bank-account/', views.UpdateBankAccountAPIView.as_view(), name='api_update_bank_account'),
+    
+    # Traditional views for templates
+    path('auth/login/', views.login_view, name='login'),
+    path('auth/register/', views.register_view, name='register'),
+    path('auth/logout/', views.logout_view, name='logout'),
 ]

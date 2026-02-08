@@ -17,6 +17,4 @@ djangorestframework
 django-cors-headers
 scikit-learn
 librosa
-langchain-core 
-pydantic 
-django-redis
+gunicorn

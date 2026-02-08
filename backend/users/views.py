@@ -1,4 +1,6 @@
-from django.contrib.auth import login, logout
+from django.shortcuts import render, redirect
+from django.contrib.auth import login, logout, authenticate
+from django.contrib.auth.forms import AuthenticationForm
 from django.utils.decorators import method_decorator
 from django.views.decorators.csrf import ensure_csrf_cookie, csrf_protect
 from django.middleware.csrf import get_token
@@ -6,6 +8,7 @@ from rest_framework import generics, permissions, status, views
 from rest_framework.response import Response
 from .serializers import UserRegistrationSerializer, UserSerializer, LoginSerializer
 from .transcription import transcribe_audio
+from .forms import CustomUserCreationForm
 
 # Keep existing Function Based Views if needed for backward compatibility or direct access, 
 # but for the React migration we focus on these API Views.
@@ -15,9 +18,8 @@ class RegisterAPIView(generics.CreateAPIView):
     permission_classes = (permissions.AllowAny,)
 
     def perform_create(self, serializer):
+        # Serializer handles creation and bank account linking
         user = serializer.save()
-        from banking.models import BankAccount
-        BankAccount.objects.get_or_create(user=user)
         login(self.request, user)
 
 class LoginAPIView(views.APIView):
@@ -42,8 +44,7 @@ class CheckSessionView(views.APIView):
 
     def get(self, request):
         if request.user.is_authenticated:
-            from banking.models import BankAccount
-            BankAccount.objects.get_or_create(user=request.user)
+            # We assume user already has a bank account from registration
             return Response(UserSerializer(request.user).data)
         return Response({'isAuthenticated': False, 'details': 'User is Anonymous'}, status=status.HTTP_401_UNAUTHORIZED)
 
@@ -78,3 +79,62 @@ class ProfileUpdateAPIView(generics.UpdateAPIView):
 
     def get_object(self):
         return self.request.user
+
+class UpdateBankAccountAPIView(views.APIView):
+    permission_classes = (permissions.IsAuthenticated,)
+
+    def post(self, request):
+        new_iban = request.data.get('iban')
+        if not new_iban:
+            return Response({'error': 'IBAN is required'}, status=status.HTTP_400_BAD_REQUEST)
+            
+        from banking.models import BankAccount
+        try:
+            # Check if new IBAN exists and is unclaimed
+            new_account = BankAccount.objects.get(iban=new_iban)
+            if new_account.user is not None:
+                 # Check if it's already the user's account
+                if new_account.user == request.user:
+                     return Response({'message': 'This is already your linked account.'}, status=status.HTTP_200_OK)
+                return Response({'error': 'This IBAN is already linked to another user.'}, status=status.HTTP_400_BAD_REQUEST)
+            
+            # Unlink old account
+            old_account = BankAccount.objects.filter(user=request.user).first()
+            if old_account:
+                old_account.user = None
+                old_account.save()
+            
+            # Link new account
+            new_account.user = request.user
+            new_account.save()
+            
+            return Response({'message': 'Bank account updated successfully', 'iban': new_iban}, status=status.HTTP_200_OK)
+            
+        except BankAccount.DoesNotExist:
+            return Response({'error': 'Invalid IBAN. Account not found.'}, status=status.HTTP_404_NOT_FOUND)
+
+def login_view(request):
+    if request.method == 'POST':
+        form = AuthenticationForm(request, data=request.data if hasattr(request, 'data') else request.POST)
+        if form.is_valid():
+            user = form.get_user()
+            login(request, user)
+            return redirect('home')
+    else:
+        form = AuthenticationForm()
+    return render(request, 'users/login.html', {'form': form})
+
+def register_view(request):
+    if request.method == 'POST':
+        form = CustomUserCreationForm(request.POST)
+        if form.is_valid():
+            user = form.save()
+            login(request, user)
+            return redirect('home')
+    else:
+        form = CustomUserCreationForm()
+    return render(request, 'users/register.html', {'form': form})
+
+def logout_view(request):
+    logout(request)
+    return redirect('home')

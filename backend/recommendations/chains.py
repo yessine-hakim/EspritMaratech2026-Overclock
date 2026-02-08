@@ -140,8 +140,8 @@ def get_synthesis_chain():
         2. **BANKING / STATUS**:
            - **Balance check**: State the amount clearly.
            - **Affordability**: Provide a detailed breakdown.
-           - Example: "The {product} costs {price}. With your cart total of {cart}, you would spend {total}. This is within your {budget} monthly budget and represents {impact}% of it. Yes, you can afford it!"
-           - Example: "This item fits your balance, but it would exceed your monthly budget by {diff}. I suggest waiting or finding a cheaper alternative."
+           - Example: "The {{product}} costs {{price}}. With your cart total of {{cart}}, you would spend {{total}}. This is within your {{budget}} monthly budget and represents {{impact}}% of it. Yes, you can afford it!"
+           - Example: "This item fits your balance, but it would exceed your monthly budget by {{diff}}. I suggest waiting or finding a cheaper alternative."
         
         3. **NAVIGATION**:
            - Explain how to use the app.
