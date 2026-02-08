@@ -55,7 +55,6 @@ MIDDLEWARE = [
     'corsheaders.middleware.CorsMiddleware',
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
-    'cart.views.DebugLoggingMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
@@ -174,15 +173,15 @@ CSRF_TRUSTED_ORIGINS = [
 ]
 
 # Cookie Settings for Dev
-# Cookie Settings for Dev
-SESSION_COOKIE_NAME = 'sessionid'
-CSRF_COOKIE_NAME = 'csrftoken'
+SESSION_COOKIE_NAME = 'pay4all_sessionid'
+CSRF_COOKIE_NAME = 'pay4all_csrftoken'
 SESSION_COOKIE_HTTPONLY = True
-CSRF_COOKIE_HTTPONLY = False 
-CSRF_USE_SESSIONS = False
+CSRF_COOKIE_HTTPONLY = False  # Allows React to read the cookie
+CSRF_USE_SESSIONS = False     # Use cookie-based CSRF for easier sync with React
 SESSION_COOKIE_SAMESITE = 'Lax'
 CSRF_COOKIE_SAMESITE = 'Lax'
 CSRF_HEADER_NAME = 'HTTP_X_CSRFTOKEN'
-# Ensure SESSION_ID and CSRF_TOKEN are persisted
+CSRF_COOKIE_PATH = '/'
+SESSION_COOKIE_PATH = '/'
 SESSION_EXPIRE_AT_BROWSER_CLOSE = False
 SESSION_COOKIE_AGE = 1209600

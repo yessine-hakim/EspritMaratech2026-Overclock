@@ -26,9 +26,9 @@ api.interceptors.request.use((config) => {
         return cookieValue;
     };
 
-    const csrftoken = getCookie('csrftoken');
+    const csrftoken = getCookie('pay4all_csrftoken');
     console.log(`DEBUG: Interceptor - Cookies available: ${document.cookie.substring(0, 50)}...`);
-    console.log(`DEBUG: Interceptor - csrftoken found: ${!!csrftoken}`);
+    console.log(`DEBUG: Interceptor - pay4all_csrftoken found: ${!!csrftoken}`);
 
     if (csrftoken) {
         config.headers['X-CSRFToken'] = csrftoken;
