@@ -45,7 +45,8 @@ const GlobalVoiceCommander = () => {
         setReadabilityMode,
         setGrayscale,
         setVisualAlerts,
-        setFocusMode
+        setFocusMode,
+        visibleProducts
     } = useA11y();
 
     const VOICE_SPENDING_LIMIT = 500; // Increased limit with VoiceID
@@ -128,7 +129,8 @@ const GlobalVoiceCommander = () => {
 
             const response = await api.post('/api/recommendations/voice-intent/', {
                 transcript: processedTranscript,
-                productId: productId
+                productId: productId,
+                visibleProducts: location.pathname === '/results' ? visibleProducts : []
             });
             const { action, target, value, response: feedback } = response.data;
 
@@ -346,7 +348,11 @@ const GlobalVoiceCommander = () => {
 
             if (action === 'navigate') {
                 const pathMap = { 'home': '/', 'cart': '/cart', 'banking': '/banking', 'profile': '/profile', 'login': '/login', 'results': '/results' };
-                if (pathMap[target]) navigate(pathMap[target]);
+                if (pathMap[target]) {
+                    navigate(pathMap[target]);
+                } else if (target && target.startsWith('/')) {
+                    navigate(target);
+                }
             }
             else if (action === 'search') navigate(`/results?q=${target}`);
             else if (action === 'accessibility') {
@@ -403,7 +409,7 @@ const GlobalVoiceCommander = () => {
             setIsThinking(false);
             speak("I'm sorry, I'm having trouble processing that.");
         }
-    }, [navigate, speak, isHandsFree, setHighContrast, setFontSize, setSimplifiedMode, location.pathname, addToCart, checkout, cart, pendingAction, authStep, authData, login, register, logout, recordBiometrics]);
+    }, [navigate, speak, isHandsFree, setHighContrast, setFontSize, setSimplifiedMode, location.pathname, addToCart, checkout, cart, pendingAction, authStep, authData, login, register, logout, recordBiometrics, visibleProducts]);
 
     const processCommandRef = useRef(null);
     useEffect(() => {

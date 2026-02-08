@@ -68,6 +68,7 @@ export const A11yProvider = ({ children }) => {
         }
     });
     const [activeAlert, setActiveAlert] = useState(null);
+    const [visibleProducts, setVisibleProducts] = useState([]);
 
     useEffect(() => {
         try {
@@ -204,7 +205,8 @@ export const A11yProvider = ({ children }) => {
             dyslexiaFont, setDyslexiaFont,
             spokenNavigation, setSpokenNavigation,
             announce,
-            speak
+            speak,
+            visibleProducts, setVisibleProducts
         }}>
             {children}
             {/* Hidden ARIA live region for global announcements */}
@@ -242,7 +244,9 @@ export const useA11y = () => {
             spokenNavigation: false,
             setSpokenNavigation: () => { },
             announce: () => { },
-            speak: () => { }
+            speak: () => { },
+            visibleProducts: [],
+            setVisibleProducts: () => { }
         };
     }
     return context;

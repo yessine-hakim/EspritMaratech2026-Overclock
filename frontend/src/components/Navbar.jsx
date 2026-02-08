@@ -159,6 +159,15 @@ const Navbar = () => {
                                 className="hidden"
                                 onChange={handleImageUpload}
                             />
+
+                            <button
+                                type="submit"
+                                className="p-2 text-primary hover:text-accent transition-transform hover:scale-110"
+                                title="Search"
+                            >
+                                <FaSearch size={24} aria-hidden="true" />
+                                <span className="sr-only">Search</span>
+                            </button>
                         </div>
                     </div>
                 </form>

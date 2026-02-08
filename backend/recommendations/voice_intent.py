@@ -23,7 +23,8 @@ def classify_voice_intent(request):
         data = json.loads(request.body)
         transcript = data.get("transcript", "").strip()
         product_id = data.get("productId") # Handled from frontend GlobalVoiceCommander
-        
+        visible_products = data.get("visibleProducts", []) # List of {id, title}
+
         if not transcript:
             return JsonResponse({"error": "No transcript provided"}, status=400)
 
@@ -41,35 +42,39 @@ def classify_voice_intent(request):
 
         prompt = ChatPromptTemplate.from_messages([
             ("system", """You are the AI Voice Brain for Pay4All, an inclusive shopping app.
-            Your job is to convert a user's voice transcript into a structured JSON command for the frontend.
+            Your job is to convert a user's voice transcript into a structured JSON command.
 
-            VALID ACTIONS & TARGETS:
-            1. Action: 'navigate'
+            VALID ACTIONS:
+            1. 'navigate_product': Use when user says "Open [Product]", "Show [Product]", or just names a specific product like "Danone Yoghurt".
+            2. 'search': Use when user says "Buy [Category]", "Find [Item]", "I want [Item]", or asks for a generic category like "Milk", "Yoghurt".
+            3. Action: 'navigate'
                Targets: 'home', 'cart', 'banking', 'profile', 'login', 'results'
-            2. Action: 'search'
-               Target: The search query string (e.g., 'blue shoes')
-            3. Action: 'accessibility'
+            4. Action: 'accessibility'
                Targets: 'highContrast', 'fontSize', 'simplifiedMode' etc.
-            4. Action: 'banking'
+            5. Action: 'banking'
                Targets: 'balance', 'transactions', 'affordability', 'transfer'
-            5. Action: 'cart'
+            6. Action: 'cart'
                Targets: 'add', 'remove', 'view', 'checkout'
-            6. Action: 'status_check'
+            7. Action: 'status_check'
                Target: 'affordability', 'budget_status', 'cart_status'
                Explain: Use this for "Can I afford this?", "How is my budget?", "What's in my cart?".
-            7. Action: 'confirm'
+            8. Action: 'confirm'
                Target: 'payment', 'transfer', 'generic', 'register'
-            8. Action: 'cancel'
+            9. Action: 'cancel'
                Target: 'any'
-            9. Action: 'auth'
+            10. Action: 'auth'
                Targets: 'login', 'register', 'logout', 'credential_input'
-            10. Action: 'chat'
+            11. Action: 'chat'
                Target: 'general' (For general questions or conversation)
 
-            CONTEXTUAL GUIDANCE:
-            - If the user asks "Can I afford this?" or "Can I buy this?", set action='status_check' and target='affordability'.
-            - If the user asks about their remaining budget, set action='status_check' and target='budget_status'.
-            - If they ask about balance, action='banking' target='balance'.
+            CRITICAL RULES:
+            - "I want to buy yoghurt" -> Action: 'search', Target: 'yoghurt' (Intent is to see options).
+            - "Find me milk" -> Action: 'search', Target: 'milk'.
+            - "Open Danone" -> Action: 'navigate_product', Target: 'Danone'.
+            - "Danone" -> Action: 'navigate_product', Target: 'Danone' (Specific Brand).
+            - "Yoghurt" -> Action: 'search', Target: 'yoghurt' (Generic Category).
+            - "Add this product" -> Action: 'cart', Target: 'add' (Contextual Add).
+            - "Add to cart" -> Action: 'cart', Target: 'add'.
 
             Output valid JSON only. Response field is for verbal confirmation.
             """),
@@ -79,9 +84,53 @@ def classify_voice_intent(request):
         chain = prompt | llm | parser
         result = chain.invoke({"transcript": transcript})
 
+        # --- PRODUCT NAVIGATION & SEARCH LOGIC ---
+        if result['action'] == 'navigate_product' or (result['action'] == 'search' and result['target']):
+            from products.models import Product
+            target_name = result['target']
+            
+            # 1. PRIORITY: Check Visible Products (Context)
+            matched_context_product = None
+            if visible_products:
+                # Simple fuzzy check: matches target if target is in title
+                for vp in visible_products:
+                    if target_name.lower() in vp['title'].lower():
+                        matched_context_product = vp
+                        break
+            
+            if matched_context_product and result['action'] == 'navigate_product':
+                # Context Match! Open it immediately
+                result['action'] = 'navigate'
+                result['target'] = f"/product/{matched_context_product['id']}"
+                result['response'] = f"Opening {matched_context_product['title']}."
+            else:
+                # 2. Global DB Search (Fallback)
+                matches = Product.objects.filter(title__icontains=target_name)
+                count = matches.count()
+
+                if result['action'] == 'navigate_product':
+                    if count == 1:
+                        product = matches.first()
+                        result['action'] = 'navigate'
+                        result['target'] = f"/product/{product.id}"
+                        result['response'] = f"Opening {product.title}."
+                    elif count > 1:
+                        result['action'] = 'search'
+                        result['target'] = target_name
+                        result['response'] = f"I found {count} products matching '{target_name}'. Here they are."
+                    else:
+                        result['action'] = 'search'
+                        result['target'] = target_name
+                        result['response'] = f"I couldn't find '{target_name}' exactly, so I'm searching for it."
+                
+                elif result['action'] == 'search':
+                     if count > 0:
+                         result['response'] = f"Searching for {target_name}. Found {count} results."
+                     else:
+                         result['response'] = f"Searching for {target_name}."
+
+
         # --- ADVANCED: Contextual Data Binding ---
-        # If the query is about status/affordability, we need REAL data.
-        # We'll invoke the Recommendation Graph to get a data-backed response.
         if result['action'] == 'status_check' or (result['action'] == 'banking' and result['target'] == 'balance'):
             from .graph import create_recommendation_graph
             from cart.models import Cart
@@ -102,7 +151,7 @@ def classify_voice_intent(request):
             
             # Add product_id if mentioned or contextually provided
             if product_id:
-                state["visual_ids"] = [product_id] # We use visual_ids as a general ID transport for now or add a new field
+                state["visual_ids"] = [product_id] 
             
             # Run graph to get an intelligent, data-backed explanation
             graph_result = graph.invoke(state)

@@ -19,6 +19,8 @@ const ProfilePage = () => {
     const [loading, setLoading] = useState(false);
     const [success, setSuccess] = useState('');
     const [error, setError] = useState('');
+    const [showIbanModal, setShowIbanModal] = useState(false);
+    const [newIban, setNewIban] = useState('');
 
     useEffect(() => {
         if (user) {
@@ -53,6 +55,27 @@ const ProfilePage = () => {
         } catch (err) {
             console.error("Profile update failed", err);
             setError('Failed to update profile. Please check your inputs.');
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const handleIbanUpdate = async (e) => {
+        e.preventDefault();
+        setLoading(true);
+        setError('');
+        setSuccess('');
+
+        try {
+            const response = await api.post('/api/users/update-bank-account/', { iban: newIban });
+            await checkAuth(); // Refresh user data
+            setSuccess(`Bank account updated! New IBAN: ${response.data.iban}`);
+            setShowIbanModal(false);
+            setNewIban('');
+            setTimeout(() => setSuccess(''), 5000);
+        } catch (err) {
+            console.error("IBAN update failed", err);
+            setError(err.response?.data?.error || 'Failed to update bank account.');
         } finally {
             setLoading(false);
         }
@@ -151,6 +174,14 @@ const ProfilePage = () => {
                     </h2>
 
                     <div className="space-y-4">
+                        <div>
+                            <label className="block text-xs font-bold uppercase text-gray-400 mb-1 ml-1">Linked IBAN</label>
+                            <div className="w-full p-4 bg-gray-100 border-none rounded-2xl text-gray-600 font-mono font-bold flex items-center justify-between">
+                                {user?.bank_account?.iban || "No Linked Account"}
+                                <span className="text-xs bg-emerald-100 text-emerald-600 px-2 py-1 rounded-md">VERIFIED</span>
+                            </div>
+                        </div>
+
                         <div>
                             <label className="block text-xs font-bold uppercase text-gray-400 mb-1 ml-1" htmlFor="monthly_budget">Monthly Budget (TND)</label>
                             <input

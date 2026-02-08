@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useSearchParams, useLocation, Link } from 'react-router-dom';
 import api from '../api';
+import { useA11y } from '../context/A11yContext';
 import ProductCard from '../components/ProductCard';
 import { FaFilter, FaStar } from 'react-icons/fa';
 
@@ -17,6 +18,8 @@ const ResultsPage = () => {
     const [selectedCategories, setSelectedCategories] = useState(categoryId ? [categoryId] : []);
     const [totalPages, setTotalPages] = useState(1);
     const currentPage = parseInt(searchParams.get('page') || '1', 10);
+
+    const { setVisibleProducts } = useA11y();
 
     // Fetch categories for sidebar
     useEffect(() => {
@@ -36,6 +39,7 @@ const ResultsPage = () => {
         // If we have state from visual search, use it
         if (location.state?.products) {
             setProducts(location.state.products);
+            setVisibleProducts(location.state.products.map(p => ({ id: p.id, title: p.title })));
             setLoading(false);
             return;
         }
@@ -48,6 +52,7 @@ const ResultsPage = () => {
                 const params = new URLSearchParams(location.search);
                 const res = await api.get(`/api/products/api/results/?${params.toString()}`);
                 setProducts(res.data.results);
+                setVisibleProducts(res.data.results.map(p => ({ id: p.id, title: p.title })));
                 setTotalPages(res.data.pages);
                 setExplanation(res.data.explanation);
 
@@ -60,7 +65,7 @@ const ResultsPage = () => {
         };
 
         fetchResults();
-    }, [location.search, location.state]);
+    }, [location.search, location.state, setVisibleProducts]);
 
     const handleCategoryChange = (e) => {
         const value = e.target.value;
