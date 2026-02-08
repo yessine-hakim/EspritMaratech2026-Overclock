@@ -29,6 +29,13 @@ api.interceptors.request.use((config) => {
     const csrftoken = getCookie('csrftoken');
     if (csrftoken) {
         config.headers['X-CSRFToken'] = csrftoken;
+    } else {
+        // Fallback for cases where cookie might be named slightly differently or 
+        // to handle specific browser behaviors if necessary
+        const alternativeCsrf = document.querySelector('[name=csrfmiddlewaretoken]')?.value;
+        if (alternativeCsrf) {
+            config.headers['X-CSRFToken'] = alternativeCsrf;
+        }
     }
     return config;
 }, (error) => {

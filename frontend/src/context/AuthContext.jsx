@@ -11,11 +11,11 @@ export const AuthProvider = ({ children }) => {
 
     const checkAuth = async () => {
         try {
-            // Ensure CSRF cookie is set
-            await api.get('/api/users/csrf/');
+            // GET /me/ doesn't require CSRF if session cookie is present
             const response = await api.get('/api/users/me/');
             setUser(response.data);
         } catch (error) {
+            // User not logged in or session expired
             setUser(null);
         } finally {
             setLoading(false);
