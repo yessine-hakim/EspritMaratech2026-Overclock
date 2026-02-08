@@ -17,3 +17,4 @@ djangorestframework
 django-cors-headers
 scikit-learn
 librosa
+gunicorn
