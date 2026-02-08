@@ -163,6 +163,7 @@ CORS_ALLOWED_ORIGINS = [
     "http://localhost:5173",
     "http://127.0.0.1:5173",
     "https://espritmaratech2026-overclock-6.onrender.com",
+    "https://frolicking-fairy-eaba31.netlify.app",
 ]
 CORS_ALLOW_CREDENTIALS = True
 CORS_EXPOSE_HEADERS = ['Content-Type', 'X-CSRFToken']
@@ -172,11 +173,15 @@ CSRF_TRUSTED_ORIGINS = [
     "http://localhost:5173",
     "http://127.0.0.1:5173",
     "https://espritmaratech2026-overclock-6.onrender.com",
+    "https://frolicking-fairy-eaba31.netlify.app",
 ]
 
 # Cookie Settings
-SESSION_COOKIE_SAMESITE = 'Lax'
-CSRF_COOKIE_SAMESITE = 'Lax'
-SESSION_COOKIE_HTTPONLY = True  # Standard security
-CSRF_COOKIE_HTTPONLY = False  # React needs to read it for requests
+# Use 'None' for cross-domain support in production (Netlify -> Render)
+SESSION_COOKIE_SAMESITE = 'None'
+CSRF_COOKIE_SAMESITE = 'None'
+SESSION_COOKIE_HTTPONLY = True
+CSRF_COOKIE_HTTPONLY = False
+SESSION_COOKIE_SECURE = True
+CSRF_COOKIE_SECURE = True
 SESSION_COOKIE_AGE = 1209600 # 2 weeks
