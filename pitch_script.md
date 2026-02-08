@@ -78,21 +78,7 @@ And we've built this on production-ready technology - Qdrant vector search, Lang
 
 ---
 
-## SLIDE 6: LIVE DEMO (2:20 - 2:40) - SHOW IT
-
-**[If time permits, do a quick demo OR describe it vividly]**
-
-"Let me show you this in action.
-
-**[Either do live demo OR describe vividly]**
-
-Watch as I register with voice, setting a 200 dinar budget. I search for 'yogurt under 50 dinars' - the system finds affordable options instantly. I ask 'Can I afford this?' - it validates against my balance. Then I say 'Checkout' and complete the purchase.
-
-All hands-free. All accessible. All budget-aware."
-
----
-
-## SLIDE 7: THE ASK (2:40 - 3:00) - CLOSE STRONG
+## SLIDE 6: THE ASK (2:40 - 3:00) - CLOSE STRONG
 
 **[Build to powerful conclusion]**
 

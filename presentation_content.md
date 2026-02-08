@@ -103,21 +103,7 @@ The app recommends:
 
 ---
 
-## Slide 6: LIVE DEMO
-
-### See It In Action
-
-**Watch as we:**
-1. Register with voice (set 200 TND budget)
-2. Search: *"yogurt under 50 dinars"*
-3. Check: *"Can I afford this?"*
-4. Complete: *"Checkout"*
-
-**All hands-free. All accessible. All budget-aware.**
-
----
-
-## Slide 7: THE ASK
+## Slide 6: THE ASK
 
 ### Join Us in Democratizing E-Commerce
 
