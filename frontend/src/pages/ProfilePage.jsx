@@ -159,10 +159,10 @@ const ProfilePage = () => {
                                 id="email"
                                 name="email"
                                 value={formData.email}
-                                disabled
-                                className="w-full p-4 bg-gray-100 border-none rounded-2xl text-gray-500 cursor-not-allowed font-medium"
+                                onChange={handleChange}
+                                className="w-full p-4 bg-gray-50 border-none rounded-2xl focus:ring-2 focus:ring-accent/20 outline-none transition-all font-medium text-primary"
                             />
-                            <p className="text-[10px] text-gray-400 mt-2 ml-1">Email is used for secure authentication and cannot be changed.</p>
+                            <p className="text-[10px] text-gray-400 mt-2 ml-1">Changing your email will update your login username.</p>
                         </div>
                     </div>
                 </section>
@@ -175,12 +175,58 @@ const ProfilePage = () => {
 
                     <div className="space-y-4">
                         <div>
-                            <label className="block text-xs font-bold uppercase text-gray-400 mb-1 ml-1">Linked IBAN</label>
+                            <div className="flex justify-between items-center mb-1">
+                                <label className="block text-xs font-bold uppercase text-gray-400 ml-1">Linked IBAN</label>
+                                <button
+                                    type="button"
+                                    onClick={() => setShowIbanModal(true)}
+                                    className="text-xs text-accent font-bold hover:underline"
+                                >
+                                    Change Account
+                                </button>
+                            </div>
                             <div className="w-full p-4 bg-gray-100 border-none rounded-2xl text-gray-600 font-mono font-bold flex items-center justify-between">
                                 {user?.bank_account?.iban || "No Linked Account"}
                                 <span className="text-xs bg-emerald-100 text-emerald-600 px-2 py-1 rounded-md">VERIFIED</span>
                             </div>
                         </div>
+
+                        {/* IBAN Update Modal */}
+                        {showIbanModal && (
+                            <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+                                <div className="bg-white rounded-2xl p-6 max-w-md w-full shadow-2xl">
+                                    <h3 className="text-xl font-bold text-primary mb-4">Update Bank Account</h3>
+                                    <p className="text-sm text-gray-500 mb-4">Enter a new, valid Pay4All IBAN. This will unlink your current account.</p>
+
+                                    <div className="mb-4">
+                                        <input
+                                            type="text"
+                                            value={newIban}
+                                            onChange={(e) => setNewIban(e.target.value)}
+                                            placeholder="TN1234..."
+                                            className="w-full p-3 border border-gray-300 rounded-xl font-mono focus:ring-2 focus:ring-accent outline-none"
+                                        />
+                                    </div>
+                                    <div className="flex justify-end gap-3">
+                                        <button
+                                            type="button"
+                                            onClick={() => setShowIbanModal(false)}
+                                            className="px-4 py-2 text-gray-500 font-bold hover:bg-gray-100 rounded-lg"
+                                        >
+                                            Cancel
+                                        </button>
+                                        <button
+                                            type="button"
+                                            onClick={handleIbanUpdate}
+                                            disabled={loading || !newIban}
+                                            className="px-4 py-2 bg-accent text-white font-bold rounded-lg hover:bg-[#0e5a56] disabled:opacity-50"
+                                        >
+                                            {loading ? 'Updating...' : 'Update IBAN'}
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
 
                         <div>
                             <label className="block text-xs font-bold uppercase text-gray-400 mb-1 ml-1" htmlFor="monthly_budget">Monthly Budget (TND)</label>

@@ -18,9 +18,16 @@ class TransferView(views.APIView):
     permission_classes = [permissions.IsAuthenticated]
 
     def post(self, request):
-        amount = float(request.data.get('amount', 0))
+        try:
+            amount = float(request.data.get('amount', 0))
+        except (ValueError, TypeError):
+            return Response({"error": "Invalid amount"}, status=status.HTTP_400_BAD_REQUEST)
+
+        if amount <= 0:
+            return Response({"error": "Amount must be positive"}, status=status.HTTP_400_BAD_REQUEST)
+
         description = request.data.get('description', 'Transfer')
-        recipient_iban = request.data.get('recipient_iban')
+        recipient_iban = request.data.get('recipient_iban', '').replace(' ', '').strip()
 
         sender_account = get_object_or_404(BankAccount, user=request.user)
         recipient_account = get_object_or_404(BankAccount, iban=recipient_iban)
