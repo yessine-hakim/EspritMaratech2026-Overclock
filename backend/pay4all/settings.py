@@ -25,7 +25,7 @@ SECRET_KEY = 'django-insecure-8yhq7+mg+v&(zrp#@(7zpp)_#$h)j*spe--j2_7!q8e!t=zc4*
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ['localhost', '127.0.0.1']
+ALLOWED_HOSTS = ['localhost', '127.0.0.1', 'espritmaratech2026-overclock-4.onrender.com']
 
 
 # Application definition
@@ -157,6 +157,7 @@ REST_FRAMEWORK = {
 CORS_ALLOWED_ORIGINS = [
     "http://localhost:5173",
     "http://127.0.0.1:5173",
+    "https://espritmaratech2026-overclock-4.onrender.com",
 ]
 CORS_ALLOW_CREDENTIALS = True
 
@@ -164,6 +165,7 @@ CORS_ALLOW_CREDENTIALS = True
 CSRF_TRUSTED_ORIGINS = [
     "http://localhost:5173",
     "http://127.0.0.1:5173",
+    "https://espritmaratech2026-overclock-4.onrender.com",
 ]
 
 # Cookie Settings for Dev
