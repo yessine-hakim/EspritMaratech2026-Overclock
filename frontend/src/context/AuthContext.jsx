@@ -16,14 +16,7 @@ export const AuthProvider = ({ children }) => {
             const response = await api.get('/api/users/me/');
             setUser(response.data);
         } catch (error) {
-            if (error.response && (error.response.status === 401 || error.response.status === 403)) {
-                setUser(null);
-            } else {
-                console.error("Check auth failed (network or server error)", error);
-                // Don't necessarily logout on transient network errors
-                // But on initial load, we should probably assume null if we can't reach the server
-                if (!user) setUser(null);
-            }
+            setUser(null);
         } finally {
             setLoading(false);
         }

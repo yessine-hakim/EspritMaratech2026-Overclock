@@ -1,8 +1,8 @@
 import axios from 'axios';
 
 const api = axios.create({
-    baseURL: import.meta.env.VITE_API_BASE_URL || '', // Empty for relative proxy in dev
-    withCredentials: true,
+    baseURL: import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000', // Django server URL
+    withCredentials: true, // Important for session cookies
     headers: {
         'Content-Type': 'application/json',
     },
@@ -26,15 +26,9 @@ api.interceptors.request.use((config) => {
         return cookieValue;
     };
 
-    const csrftoken = getCookie('pay4all_csrftoken');
-    console.log(`DEBUG: Interceptor - Cookies available: ${document.cookie.substring(0, 50)}...`);
-    console.log(`DEBUG: Interceptor - pay4all_csrftoken found: ${!!csrftoken}`);
-
+    const csrftoken = getCookie('csrftoken');
     if (csrftoken) {
         config.headers['X-CSRFToken'] = csrftoken;
-        console.log("DEBUG: Interceptor - Set X-CSRFToken header");
-    } else {
-        console.warn("DEBUG: Interceptor - CSRF Token MISSING from cookies");
     }
     return config;
 }, (error) => {

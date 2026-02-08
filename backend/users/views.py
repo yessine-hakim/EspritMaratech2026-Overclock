@@ -43,13 +43,9 @@ class CheckSessionView(views.APIView):
     permission_classes = (permissions.AllowAny,)
 
     def get(self, request):
-        print(f"DEBUG: CheckSessionView - User: {request.user}, IsAuthenticated: {request.user.is_authenticated}")
-        # print(f"DEBUG: CheckSessionView - Cookies: {request.COOKIES}")
         if request.user.is_authenticated:
             # We assume user already has a bank account from registration
             return Response(UserSerializer(request.user).data)
-        
-        print("DEBUG: CheckSessionView - User is not authenticated, returning 401")
         return Response({'isAuthenticated': False, 'details': 'User is Anonymous'}, status=status.HTTP_401_UNAUTHORIZED)
 
 @method_decorator(ensure_csrf_cookie, name='dispatch')
